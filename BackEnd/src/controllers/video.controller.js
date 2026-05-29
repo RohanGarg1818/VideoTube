@@ -263,13 +263,6 @@ const viewVideo = asyncHandler(async (req, res) => {
             },
             { new: true }
         );
-    } else {
-        // Anonymous user - increment views
-        video = await Video.findByIdAndUpdate(
-            { _id: videoId },
-            { $inc: { views: 1 } },
-            { new: true }
-        );
     }
 
     return res.json(new ApiResponse(200, video, "video viewed successfully"));

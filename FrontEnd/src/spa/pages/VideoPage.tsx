@@ -44,15 +44,13 @@ export function VideoPage() {
     [videoId],
   );
 
-  // Track view on video load - use a separate effect that runs after initial load
+  // Track view only for logged-in users
   useEffect(() => {
-    if (!videoId || loading) return;
+    if (!videoId || loading || !user) return;
 
-    // Small delay to ensure initial data is loaded first
     const timer = setTimeout(() => {
       VideoAPI.view(videoId)
         .then((updatedVideo) => {
-          console.log("View tracked successfully. New views:", updatedVideo?.views);
           if (updatedVideo) {
             setData(updatedVideo as Video | null);
           }
@@ -63,7 +61,7 @@ export function VideoPage() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [videoId, loading, setData]);
+  }, [videoId, loading, user, setData]);
 
   useEffect(() => {
     if (!videoId || !user) return;
