@@ -10,7 +10,7 @@ export default defineConfig({
     port: 8080,
     proxy: {
       "/api": {
-        target: "http://localhost:8000",
+        target: "https://video-tube-fawn.vercel.app/",
         changeOrigin: true,
       },
     },
