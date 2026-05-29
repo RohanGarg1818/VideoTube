@@ -1,0 +1,278 @@
+import asyncHandler from "../utils/asyncHandler.js";
+import { Video } from "../models/video.model.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiError } from "../utils/ApiError.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { User } from "../models/user.model.js";
+import { getWatchHistory } from "./user.controller.js";
+import mongoose from "mongoose";
+
+
+const getAllVideos = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
+
+    let sortCriteria = {}
+    let videoQuery = {}
+
+    if (userId) {
+        videoQuery.owner = userId
+    }
+
+    if (query) {
+        videoQuery.$or = [
+            { title: { $regex: query, $options: 'i' } },
+            { description: { $regex: query, $options: 'i' } }
+        ]
+    }
+    
+    if (sortBy && sortType) {
+        sortCriteria[sortBy] = sortType === "desc" ? -1 : 1;
+    }
+    
+    const videos = await Video.find(videoQuery)
+    .sort(sortCriteria)
+    .skip((page - 1) * limit)
+    .limit(limit);
+    
+    if (!videos) {
+        throw new ApiError(400, "error while fetching all videos")
+    }
+    
+    return res.status(200).json(new ApiResponse(200, videos, "videos fetched"))
+})
+
+// const aggregate = Video.aggregate();
+
+// const getAllVideos = asyncHandler(async(req,res)=>{
+//     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
+
+//     const pipeline = [];
+
+//     // Example: Filtering by userId
+//     if (userId) {
+//         pipeline.push({ $match: { userId: userId } });
+//     }
+
+//     // Other pipeline stages based on query parameters can be added similarly
+    
+//     // Add $skip and $limit stages for pagination
+//     pipeline.push({ $skip: (page - 1) * limit });
+//     pipeline.push({ $limit: parseInt(limit) });
+
+//     // Example: Sorting
+//     if (sortBy && sortType) {
+//         const sortStage = { $sort: {} };
+//         sortStage.$sort[sortBy] = sortType === 'desc' ? -1 : 1;
+//         pipeline.push(sortStage);
+//     }
+
+//     await Video.aggregatePaginate(aggregate, { page, limit, customLabels: { docs: 'data' }, pipeline })
+//     .then(function(result){
+//         console.log(result)
+//         return res.status(200).json(new ApiResponse(200,result, "video fetched successfully"))
+//     })
+//     .catch(function(err){
+//         console.log(err);
+//         throw new ApiError(500,`videos failed to fetch ${err}`)
+//     })
+// })
+
+const publishVideo = asyncHandler(async (req, res) => {
+    const { title, description } = req.body;
+    const videoLocalPath = req.files?.videoFile?.[0]?.path;
+    const thumbnailLocalPath = req.files?.thumbnail?.[0]?.path;
+    
+    if (!title) {
+        throw new ApiError(400,"title is missing")
+    }
+    
+    if (!thumbnailLocalPath) {
+        throw new ApiError(400, "thumbnail not uploaded")
+    }
+    
+    if (!videoLocalPath) {
+        throw new ApiError(400, "video is missing")
+    }
+
+    const publishedThumbnail = await uploadOnCloudinary(thumbnailLocalPath);
+    const publishedVideo = await uploadOnCloudinary(videoLocalPath);
+
+    if (!publishedVideo) {
+        throw new ApiError(500, "error while uploading video")
+    }
+
+    if (!publishedThumbnail) {
+        throw new ApiError(500,"error while uploading thumbnail")
+    }
+
+    const video = await Video.create(
+        {
+            title,
+            description: description || "",
+            thumbnail: publishedThumbnail.url,
+            videoFile: publishedVideo.url,
+            duration: publishedVideo.duration,
+            owner: req.user?._id
+        }
+    );
+
+    console.log(video);
+
+    return res.status(200).json(new ApiResponse(200, video, "video uploaded successfully"));
+
+})
+
+const getVideoById = asyncHandler(async(req,res)=>{
+    const{videoId}=req.params;
+
+    if (!videoId) {
+        throw new ApiError(400,"video id is missing")
+    }
+
+    const video = await Video.findById(videoId);
+    
+    if (!video) {
+        throw new ApiError(500,"error while fetching video")
+    }
+
+    return res.status(200).json(new ApiResponse(200,video,"video fetched"))
+
+})
+
+const updateVideo = asyncHandler(async(req,res)=>{
+    const {videoId} = req.params;
+    const {title, description}= req.body;
+
+    if(!videoId){
+        throw new ApiError(400,"video id is missing")
+    }
+
+    if (!title && !description) {
+        throw new ApiError(400,"title and description are required")
+    }
+
+    const thumbnaiLocalPath = req.file?.path;
+
+    if(!thumbnaiLocalPath){
+        throw new ApiError(400,"thumbnail file is missing")
+    }
+
+    const thumbnail = await uploadOnCloudinary(thumbnaiLocalPath);
+
+    if(!thumbnail){
+        throw new ApiError(400,"thumbnail upload failed")
+    }
+
+    const video = await Video.findByIdAndUpdate(
+        videoId,
+        {
+            $set:{
+                title,
+                description,
+                thumbnail:thumbnail?.url
+            }
+        },
+        {
+            new:true
+        }
+    )
+
+    if(!video){
+        throw new ApiError(500,"error while updating video")
+    }
+
+    return res.status(200).json(new ApiResponse(200,video,"updated"));
+})
+
+const deleteVideo = asyncHandler(async(req,res)=>{
+    const {videoId} = req.params;
+
+    if (!videoId) {
+        throw new ApiError(400, "video Id is missing")
+    }
+
+    await Video.findByIdAndDelete(videoId);
+
+    return res.status(200).json(new ApiResponse(200,{},"video deleted successfully"))
+})
+
+const toggleIsPublished = asyncHandler(async(req,res)=>{
+    const {videoId} = req.params;
+
+    if(!videoId){
+        throw new ApiError(400,"video id is missing")
+    }
+
+    const video = await Video.findById(videoId);
+
+    video.isPublished = !video.isPublished;
+    await video.save()
+    
+    return res.json(new ApiResponse(200,video,"updated"))
+})
+
+const viewVideo = asyncHandler(async (req, res) => {
+    const { videoId } = req.params;
+    const userId = req.user?._id;
+
+    if (!videoId) {
+        throw new ApiError(400, "video id is missing");
+    }
+
+    // Ensure video exists
+    const existing = await Video.findById(videoId);
+    if (!existing) {
+        throw new ApiError(404, "video not found");
+    }
+
+    let video = existing;
+
+    if (userId) {
+        // Atomically increment views and add viewer only if user hasn't viewed before
+        const updated = await Video.findOneAndUpdate(
+            { _id: videoId, viewers: { $ne: userId } },
+            { $inc: { views: 1 }, $push: { viewers: userId } },
+            { new: true }
+        );
+
+        if (updated) {
+            video = updated;
+        } else {
+            // User already viewed; fetch latest document
+            video = await Video.findById(videoId);
+        }
+
+        // Update user's watch history: remove if exists, then add to front and limit to 50
+        await User.findByIdAndUpdate(
+            userId,
+            { $pull: { watchHistory: videoId } },
+            { new: true }
+        );
+
+        // Add to front and keep only last 50 videos
+        await User.findByIdAndUpdate(
+            userId,
+            { 
+                $push: { 
+                    watchHistory: { 
+                        $each: [videoId], 
+                        $position: 0,
+                        $slice: 50
+                    } 
+                } 
+            },
+            { new: true }
+        );
+    } else {
+        // Anonymous user - increment views
+        video = await Video.findByIdAndUpdate(
+            { _id: videoId },
+            { $inc: { views: 1 } },
+            { new: true }
+        );
+    }
+
+    return res.json(new ApiResponse(200, video, "video viewed successfully"));
+});
+
+export { getAllVideos, publishVideo, getVideoById, updateVideo, deleteVideo, toggleIsPublished, viewVideo}
