@@ -30,6 +30,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     }
     
     const videos = await Video.find(videoQuery)
+    .populate("owner", "fullName username avatar")
     .sort(sortCriteria)
     .skip((page - 1) * limit)
     .limit(limit);
@@ -129,7 +130,7 @@ const getVideoById = asyncHandler(async(req,res)=>{
         throw new ApiError(400,"video id is missing")
     }
 
-    const video = await Video.findById(videoId);
+    const video = await Video.findById(videoId).populate("owner", "fullName username avatar coverImage");
     
     if (!video) {
         throw new ApiError(500,"error while fetching video")
@@ -220,7 +221,7 @@ const viewVideo = asyncHandler(async (req, res) => {
     }
 
     // Ensure video exists
-    const existing = await Video.findById(videoId);
+    const existing = await Video.findById(videoId).populate("owner", "fullName username avatar");
     if (!existing) {
         throw new ApiError(404, "video not found");
     }
@@ -239,7 +240,7 @@ const viewVideo = asyncHandler(async (req, res) => {
             video = updated;
         } else {
             // User already viewed; fetch latest document
-            video = await Video.findById(videoId);
+            video = await Video.findById(videoId).populate("owner", "fullName username avatar");
         }
 
         // Update user's watch history: remove if exists, then add to front and limit to 50
