@@ -57,17 +57,34 @@ export function PlaylistPage() {
     <div>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">{data.name}</h1>
-          {data.description && <p className="text-muted-foreground mt-1">{data.description}</p>}
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold">{data.name}</h1>
+
+            <span className="rounded-full bg-muted px-3 py-1 text-sm text-muted-foreground">
+              {data.videos?.length ?? 0} videos
+            </span>
+          </div>
+
+          {data.description && (
+            <p className="text-muted-foreground mt-1">
+              {data.description}
+            </p>
+          )}
+
           {owner && (
-            <Link to={`/channel/${owner.username}`} className="text-sm text-muted-foreground hover:underline">
+            <Link
+              to={`/channel/${owner.username}`}
+              className="text-sm text-muted-foreground hover:underline"
+            >
               @{owner.username}
             </Link>
           )}
         </div>
+
         {isMine && (
           <Button variant="destructive" size="sm" onClick={remove}>
-            <Trash2 className="h-4 w-4 mr-2" /> Delete playlist
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete playlist
           </Button>
         )}
       </div>
@@ -80,57 +97,58 @@ export function PlaylistPage() {
             const videoOwner = getOwner(v);
 
             return (
-              <Link
+              <div
                 key={v._id}
-                to={`/watch/${v._id}`}
-                className="flex gap-4 rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors"
+                className="flex gap-4 rounded-lg border border-border p-3"
               >
-                <div className="w-64 shrink-0 overflow-hidden rounded-lg">
-                  {v.thumbnail ? (
-                    <img
-                      src={v.thumbnail}
-                      alt={v.title}
-                      className="aspect-video w-full object-cover"
-                    />
-                  ) : (
-                    <div className="aspect-video w-full bg-muted" />
-                  )}
-                </div>
+                <Link
+                  to={`/watch/${v._id}`}
+                  className="flex gap-4 flex-1 min-w-0"
+                >
+                  <div className="w-64 shrink-0 overflow-hidden rounded-lg">
+                    {v.thumbnail ? (
+                      <img
+                        src={v.thumbnail}
+                        alt={v.title}
+                        className="aspect-video w-full object-cover"
+                      />
+                    ) : (
+                      <div className="aspect-video w-full bg-muted" />
+                    )}
+                  </div>
 
-                <div className="flex flex-1 items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <h3 className="font-semibold line-clamp-2">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-lg line-clamp-2">
                       {v.title}
                     </h3>
 
                     {videoOwner && (
-                      <p className="mt-1 text-sm text-muted-foreground">
+                      <p className="mt-2 text-sm text-muted-foreground">
                         {videoOwner.fullName}
                       </p>
                     )}
                   </div>
+                </Link>
 
-                  {isMine && (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={(e) => {
-                        e.preventDefault();
-
-                        if (
-                          confirm(
-                            `Remove "${v.title}" from this playlist?`
-                          )
-                        ) {
-                          removeVideo(v._id);
-                        }
-                      }}
-                    >
-                      Remove
-                    </Button>
-                  )}
-                </div>
-              </Link>
+                {isMine && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="self-start"
+                    onClick={() => {
+                      if (
+                        confirm(
+                          `Remove "${v.title}" from this playlist?`
+                        )
+                      ) {
+                        removeVideo(v._id);
+                      }
+                    }}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
             );
           })}
         </div>
