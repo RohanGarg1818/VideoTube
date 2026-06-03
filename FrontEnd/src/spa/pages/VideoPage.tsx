@@ -127,7 +127,7 @@ export function VideoPage() {
         <div className="h-6 w-2/3 animate-pulse rounded bg-muted" />
       </div>
     );
-  if (error) return <ErrorState message={error?.message || "Something went wrong"} onRetry={refetch} />;
+  if (error) return <ErrorState message={error instanceof Error ? error.message : "Something went wrong"} onRetry={refetch} />;
   if (!video) return null;
 
   const recentVideos = (Array.isArray(recentVideoPayload)
@@ -143,7 +143,7 @@ export function VideoPage() {
     if (!user) return toast.error("Sign in to like");
     try {
       const result = await LikeAPI.toggleVideo(video._id);
-      setLiked(result.isVideoLiked);
+      setLiked(result.isVideoLiked??false);
       setData((prev) => (prev ? { ...prev, likes: result.likes } : prev));
     } catch (e) {
       toast.error(apiErrorMessage(e));
@@ -179,28 +179,54 @@ export function VideoPage() {
       </p>
 
       <div className="flex flex-wrap items-center justify-between gap-3 mt-4 border-b border-border pb-4">
-        <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between w-full">
+          {owner && (
+            <Link
+              to={`/channel/${owner.username}`}
+              className="flex items-center gap-3 min-w-0"
+            >
+              <Avatar className="h-12 w-12">
+                <AvatarImage
+                  src={owner.avatar || ""}
+                  alt={owner.fullName || owner.username}
+                />
+                <AvatarFallback>
+                  {(owner.fullName || owner.username || "U")
+                    .charAt(0)
+                    .toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+
+              <div className="min-w-0">
+                <div className="font-semibold truncate">
+                  {owner.fullName || owner.username}
+                </div>
+
+                <div className="text-xs text-muted-foreground truncate">
+                  @{owner.username}
+                </div>
+              </div>
+            </Link>
+          )}
+
           <Button
             onClick={handleSub}
             variant={subscribed ? "secondary" : "default"}
             size="sm"
-            className={subscribed ? "bg-zinc-700 text-white hover:bg-zinc-700/90 dark:bg-zinc-200 dark:text-zinc-900" : ""}
+            className={
+              subscribed
+                ? "bg-zinc-700 text-white hover:bg-zinc-700/90 dark:bg-zinc-200 dark:text-zinc-900"
+                : ""
+            }
           >
-            {subscribed ? <UserCheck className="h-4 w-4 mr-2" /> : <UserPlus className="h-4 w-4 mr-2" />}
+            {subscribed ? (
+              <UserCheck className="h-4 w-4 mr-2" />
+            ) : (
+              <UserPlus className="h-4 w-4 mr-2" />
+            )}
+
             {subscribed ? "Subscribed" : "Subscribe"}
           </Button>
-          {owner && (
-            <Link to={`/channel/${owner.username}`} className="flex items-center gap-3">
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={owner.avatar} />
-                <AvatarFallback>{owner.fullName?.[0]?.toUpperCase() ?? "U"}</AvatarFallback>
-              </Avatar>
-              <div>
-                <div className="font-medium">{owner.fullName}</div>
-                <div className="text-xs text-muted-foreground">@{owner.username}</div>
-              </div>
-            </Link>
-          )}
         </div>
         <Button onClick={handleLike} variant={liked ? "default" : "secondary"} size="sm" disabled={loadingLike}>
           <ThumbsUp className="h-4 w-4 mr-2" fill={liked ? "currentColor" : "none"} />

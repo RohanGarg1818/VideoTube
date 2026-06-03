@@ -4,7 +4,6 @@ import { Trash2 } from "lucide-react";
 import { PlaylistAPI } from "../services/endpoints";
 import { useAsync } from "../hooks/useAsync";
 import { EmptyState, ErrorState } from "../components/EmptyState";
-import { VideoCard } from "../components/VideoCard";
 import { useAuthStore } from "../store/authStore";
 import { apiErrorMessage, isNotFoundError } from "../services/api";
 import { toast } from "sonner";
@@ -76,26 +75,64 @@ export function PlaylistPage() {
       {!data.videos?.length ? (
         <EmptyState title="No videos in this playlist" />
       ) : (
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-6">
-          {data.videos.map((v) => (
-            <div key={v._id} className="relative">
-              <VideoCard video={v} />
-              {isMine && (
-                <Button
-                  size="icon"
-                  variant="destructive"
-                  className="absolute top-2 left-2 h-8 w-8"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    removeVideo(v._id);
-                  }}
-                  aria-label="Remove from playlist"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          ))}
+        <div className="space-y-4 mt-6">
+          {data.videos.map((v) => {
+            const videoOwner = getOwner(v);
+
+            return (
+              <Link
+                key={v._id}
+                to={`/watch/${v._id}`}
+                className="flex gap-4 rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors"
+              >
+                <div className="w-64 shrink-0 overflow-hidden rounded-lg">
+                  {v.thumbnail ? (
+                    <img
+                      src={v.thumbnail}
+                      alt={v.title}
+                      className="aspect-video w-full object-cover"
+                    />
+                  ) : (
+                    <div className="aspect-video w-full bg-muted" />
+                  )}
+                </div>
+
+                <div className="flex flex-1 items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold line-clamp-2">
+                      {v.title}
+                    </h3>
+
+                    {videoOwner && (
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {videoOwner.fullName}
+                      </p>
+                    )}
+                  </div>
+
+                  {isMine && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={(e) => {
+                        e.preventDefault();
+
+                        if (
+                          confirm(
+                            `Remove "${v.title}" from this playlist?`
+                          )
+                        ) {
+                          removeVideo(v._id);
+                        }
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
