@@ -30,8 +30,12 @@ export function PlaylistPage() {
 
   if (!data || !playlistId) return null;
 
-  const owner = data.owner;
-  const isMine = data.owner?._id === me?._id;
+  const owner =
+    typeof data.owner === "object"
+      ? data.owner
+      : undefined;
+
+  const isMine = owner?._id === me?._id;
   const remove = async () => {
     if (!confirm("Delete this playlist?")) return;
     try {
