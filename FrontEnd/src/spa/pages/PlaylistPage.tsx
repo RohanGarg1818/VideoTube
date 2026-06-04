@@ -8,6 +8,7 @@ import { useAuthStore } from "../store/authStore";
 import { apiErrorMessage, isNotFoundError } from "../services/api";
 import { toast } from "sonner";
 import { getOwner } from "../lib/format";
+import { timeAgo } from "../lib/format";
 
 export function PlaylistPage() {
   const { playlistId } = useParams<{ playlistId: string }>();
@@ -29,9 +30,8 @@ export function PlaylistPage() {
 
   if (!data || !playlistId) return null;
 
-  const owner = getOwner(data);
-  const isMine = owner?._id === me?._id;
-
+  const owner = data.owner;
+  const isMine = data.owner?._id === me?._id;
   const remove = async () => {
     if (!confirm("Delete this playlist?")) return;
     try {
@@ -58,7 +58,9 @@ export function PlaylistPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold">{data.name}</h1>
+            <h1 className="text-2xl font-bold">
+              {data.name}
+            </h1>
 
             <span className="rounded-full bg-muted px-3 py-1 text-sm text-muted-foreground">
               {data.videos?.length ?? 0} videos
@@ -123,10 +125,34 @@ export function PlaylistPage() {
                     </h3>
 
                     {videoOwner && (
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {videoOwner.fullName}
+                      <div className="mt-3 flex items-center gap-3">
+                        <img
+                          src={videoOwner.avatar}
+                          alt={videoOwner.fullName}
+                          className="h-8 w-8 rounded-full object-cover"
+                        />
+
+                        <div>
+                          <p className="text-sm font-medium">
+                            {videoOwner.fullName}
+                          </p>
+
+                          <p className="text-xs text-muted-foreground">
+                            @{videoOwner.username}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {v.description && (
+                      <p className="mt-3 text-sm text-muted-foreground line-clamp-2">
+                        {v.description}
                       </p>
                     )}
+
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Uploaded {timeAgo(v.createdAt)}
+                    </p>
                   </div>
                 </Link>
 
@@ -135,11 +161,12 @@ export function PlaylistPage() {
                     variant="destructive"
                     size="sm"
                     className="self-start"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+
                       if (
-                        confirm(
-                          `Remove "${v.title}" from this playlist?`
-                        )
+                        confirm(`Remove "${v.title}" from this playlist?`)
                       ) {
                         removeVideo(v._id);
                       }
