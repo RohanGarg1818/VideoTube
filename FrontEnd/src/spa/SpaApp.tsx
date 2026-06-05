@@ -65,7 +65,6 @@ export function SpaApp() {
             <Route path="/community" element={<CommunityPage />} />
             <Route element={<RequireAuth />}>
               <Route path="/upload" element={<UploadPage />} />
-              <Route path="/edit/:videoId" element={<EditVideoPage />} />
               <Route path="/liked" element={<LikedVideosPage />} />
               <Route path="/history" element={<HistoryPage />} />
               <Route path="/subscriptions" element={<SubscriptionsPage />} />

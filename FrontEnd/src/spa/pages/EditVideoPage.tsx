@@ -23,6 +23,12 @@ export function EditVideoPage() {
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  useEffect(() => {
+    if (video) {
+      setTitle(video.title || "");
+      setDescription(video.description || "");
+    }
+  }, [video]);
 
   if (loading) {
     return (
@@ -47,16 +53,7 @@ export function EditVideoPage() {
 
   if (!video) return null;
 
-  useEffect(() => {
-    if (video) {
-      setTitle(video.title || "");
-      setDescription(video.description || "");
-    }
-  }, [video]);
-
-  if (!description && video.description) {
-    setDescription(video.description);
-  }
+  
 
   const handleSave = async () => {
     try {
