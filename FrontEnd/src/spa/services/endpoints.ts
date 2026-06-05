@@ -98,6 +98,8 @@ export const VideoAPI = {
   remove: (id: string) => api.delete(`/videos/${id}`).then((r) => r.data),
   togglePublish: (id: string) =>
     api.patch(`/videos/toggle/publish/${id}`).then((r) => r.data),
+  updateVideo: (videoId: string, form: FormData) =>
+    api.patch(`/videos/${videoId}`, form).then((r) => unwrap<Video>(r.data)),
   view: (id: string) => api.patch(`/videos/${id}/view`).then((r) => unwrap<Video>(r.data)),
 };
 
@@ -151,7 +153,7 @@ export const PlaylistAPI = {
   remove: (playlistId: string) =>
     api.delete(`/playlists/${playlistId}`).then((r) => r.data),
   removeVideo: (playlistId: string, videoId: string) =>
-    api.delete(`/playlists/remove/${playlistId}/${videoId}`).then((r) => r.data),
+    api.delete(`/playlists/${playlistId}/${videoId}`).then((r) => r.data),
 };
 
 /* ===== Subscriptions ===== */

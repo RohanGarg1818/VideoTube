@@ -168,14 +168,10 @@ export function PlaylistPage() {
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-
-                      if (
-                        confirm(`Remove "${v.title}" from this playlist?`)
-                      ) {
-                        removeVideo(v._id);
-                      }
+                      removeVideo(v._id);
                     }}
                   >
+                    <Trash2 className="h-4 w-4 mr-2" />
                     Remove
                   </Button>
                 )}

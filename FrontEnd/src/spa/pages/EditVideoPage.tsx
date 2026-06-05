@@ -1,50 +1,81 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { VideoAPI } from "../services/endpoints";
 import { useAsync } from "../hooks/useAsync";
-import { apiErrorMessage } from "../services/api";
 import { ErrorState } from "../components/EmptyState";
+import { apiErrorMessage } from "../services/api";
 import { toast } from "sonner";
+import { useEffect } from "react";
+import { useAuthStore } from "../store/authStore";
 
 export function EditVideoPage() {
   const { videoId } = useParams<{ videoId: string }>();
   const navigate = useNavigate();
-  const { data, loading, error, refetch } = useAsync(
+
+  const { data: video, loading, error, refetch } = useAsync(
     () => (videoId ? VideoAPI.get(videoId) : Promise.resolve(null)),
-    [videoId],
+    [videoId]
   );
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  if (loading) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Loading...
+      </p>
+    );
+  }
+
+  if (error) {
+    return (
+      <ErrorState
+        message={
+          error instanceof Error
+            ? error.message
+            : "Something went wrong"
+        }
+        onRetry={refetch}
+      />
+    );
+  }
+
+  if (!video) return null;
 
   useEffect(() => {
-    if (data) {
-      setTitle(data.title ?? "");
-      setDescription(data.description ?? "");
+    if (video) {
+      setTitle(video.title || "");
+      setDescription(video.description || "");
     }
-  }, [data]);
+  }, [video]);
 
-  if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
-  if (error) return <ErrorState message={errorMessage || "Something went wrong"} onRetry={refetch} />;
-  if (!data || !videoId) return null;
+  if (!description && video.description) {
+    setDescription(video.description);
+  }
 
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
+  const handleSave = async () => {
     try {
+      setSaving(true);
+
       const form = new FormData();
+
       form.append("title", title);
       form.append("description", description);
-      if (thumbnail) form.append("thumbnail", thumbnail);
-      await VideoAPI.update(videoId, form);
-      toast.success("Video updated");
-      navigate(`/watch/${videoId}`);
+
+      if (thumbnail) {
+        form.append("thumbnail", thumbnail);
+      }
+
+      await VideoAPI.update(video._id, form);
+
+      toast.success("Video updated successfully");
+
+      navigate(`/watch/${video._id}`);
     } catch (e) {
       toast.error(apiErrorMessage(e));
     } finally {
@@ -52,57 +83,99 @@ export function EditVideoPage() {
     }
   };
 
-  const togglePublish = async () => {
+  const handleDelete = async () => {
     try {
-      await VideoAPI.togglePublish(videoId);
-      toast.success("Publish state toggled");
-      refetch();
-    } catch (e) {
-      toast.error(apiErrorMessage(e));
-    }
-  };
+      setDeleting(true);
 
-  const remove = async () => {
-    if (!confirm("Delete this video?")) return;
-    try {
-      await VideoAPI.remove(videoId);
-      toast.success("Video deleted");
+      await VideoAPI.remove(video._id);
+
+      toast.success("Video deleted successfully");
+
       navigate("/");
     } catch (e) {
       toast.error(apiErrorMessage(e));
+    } finally {
+      setDeleting(false);
     }
   };
 
   return (
-    <Card className="max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>Edit video</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={submit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
-            <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="desc">Description</Label>
-            <Textarea id="desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={5} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="thumb">Replace thumbnail (optional)</Label>
-            <Input id="thumb" type="file" accept="image/*" onChange={(e) => setThumbnail(e.target.files?.[0] ?? null)} />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save changes"}</Button>
-            <Button type="button" variant="secondary" onClick={togglePublish}>
-              {data.isPublished ? "Unpublish" : "Publish"}
-            </Button>
-            <Button type="button" variant="destructive" onClick={remove} className="ml-auto">
-              Delete
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+    <div className="max-w-3xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">
+          Edit Video
+        </h1>
+
+        <p className="text-sm text-muted-foreground">
+          Update your video details
+        </p>
+      </div>
+
+      {video.thumbnail && (
+        <div className="overflow-hidden rounded-xl border">
+          <img
+            src={video.thumbnail}
+            alt={video.title}
+            className="w-full object-cover"
+          />
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">
+          Title
+        </label>
+
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full rounded-md border border-border bg-background px-3 py-2"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">
+          Description
+        </label>
+
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={6}
+          className="w-full rounded-md border border-border bg-background px-3 py-2"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">
+          Change Thumbnail
+        </label>
+
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) =>
+            setThumbnail(e.target.files?.[0] || null)
+          }
+        />
+      </div>
+
+      <div className="flex gap-3">
+        <Button
+          onClick={handleSave}
+          disabled={saving}
+        >
+          {saving ? "Saving..." : "Save Changes"}
+        </Button>
+
+        <Button
+          variant="destructive"
+          disabled={deleting}
+          onClick={handleDelete}
+        >
+          {deleting ? "Deleting..." : "Delete Video"}
+        </Button>
+      </div>
+    </div>
   );
 }

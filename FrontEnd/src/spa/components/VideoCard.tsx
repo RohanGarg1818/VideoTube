@@ -2,12 +2,20 @@ import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDuration, formatViews, getOwner, timeAgo } from "../lib/format";
 import type { Video } from "../services/endpoints";
+import { Button } from "@/components/ui/button";
+import { useAuthStore } from "../store/authStore";
 
 export function VideoCard({ video }: { video: Video }) {
   const owner = getOwner(video);
+  const user = useAuthStore((s) => s.user);
+
+  const isOwner = owner?._id === user?._id;
 
   return (
-    <Link to={`/watch/${video._id}`} className="group flex flex-col gap-3">
+    <Link
+      to={`/watch/${video._id}`}
+      className="group flex flex-col gap-3"
+    >
       <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted">
         {video.thumbnail ? (
           <img
@@ -29,17 +37,36 @@ export function VideoCard({ video }: { video: Video }) {
 
       <div className="space-y-2">
         {owner && (
-          <div className="flex items-center gap-2">
-            <Avatar className="h-8 w-8 shrink-0">
-              <AvatarImage src={owner.avatar} alt={owner.fullName} />
-              <AvatarFallback>
-                {owner.fullName?.slice(0, 1).toUpperCase() ?? "U"}
-              </AvatarFallback>
-            </Avatar>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <Avatar className="h-8 w-8 shrink-0">
+                <AvatarImage
+                  src={owner.avatar}
+                  alt={owner.fullName}
+                />
+                <AvatarFallback>
+                  {owner.fullName?.slice(0, 1).toUpperCase() ?? "U"}
+                </AvatarFallback>
+              </Avatar>
 
-            <p className="truncate text-sm font-medium text-muted-foreground">
-              {owner.fullName ?? owner.username}
-            </p>
+              <p className="truncate text-sm font-medium text-muted-foreground">
+                {owner.fullName ?? owner.username}
+              </p>
+            </div>
+
+            {isOwner && (
+              <Link
+                to={`/video/edit/${video._id}`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Button
+                  size="sm"
+                  variant="outline"
+                >
+                  Edit
+                </Button>
+              </Link>
+            )}
           </div>
         )}
 

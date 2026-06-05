@@ -140,52 +140,64 @@ const getVideoById = asyncHandler(async(req,res)=>{
 
 })
 
-const updateVideo = asyncHandler(async(req,res)=>{
-    const {videoId} = req.params;
-    const {title, description}= req.body;
+const updateVideo = asyncHandler(async (req, res) => {
+    const existingVideo = await Video.findById(videoId);
+    if (
+    existingVideo.owner.toString() !==
+    req.user._id.toString()
+    ) {
+    throw new ApiError(403, "Unauthorized");
+    }
+    const { videoId } = req.params;
+    const { title, description } = req.body;
 
-    if(!videoId){
-        throw new ApiError(400,"video id is missing")
+    if (!videoId) {
+        throw new ApiError(400, "video id is missing");
     }
 
-    if (!title && !description) {
-        throw new ApiError(400,"title and description are required")
-    }
+    const updateFields = {};
 
-    const thumbnaiLocalPath = req.file?.path;
+    if (title) updateFields.title = title;
+    if (description) updateFields.description = description;
 
-    if(!thumbnaiLocalPath){
-        throw new ApiError(400,"thumbnail file is missing")
-    }
+    if (req.file?.path) {
+        const uploadedThumbnail = await uploadOnCloudinary(req.file.path);
 
-    const thumbnail = await uploadOnCloudinary(thumbnaiLocalPath);
+        if (!uploadedThumbnail) {
+            throw new ApiError(400, "thumbnail upload failed");
+        }
 
-    if(!thumbnail){
-        throw new ApiError(400,"thumbnail upload failed")
+        updateFields.thumbnail = uploadedThumbnail.url;
     }
 
     const video = await Video.findByIdAndUpdate(
         videoId,
         {
-            $set:{
-                title,
-                description,
-                thumbnail:thumbnail?.url
-            }
+            $set: updateFields
         },
         {
-            new:true
+            new: true
         }
-    )
+    );
 
-    if(!video){
-        throw new ApiError(500,"error while updating video")
+    if (!video) {
+        throw new ApiError(404, "video not found");
     }
 
-    return res.status(200).json(new ApiResponse(200,video,"updated"));
-})
+    return res.status(200).json(
+        new ApiResponse(200, video, "video updated")
+    );
+});
 
 const deleteVideo = asyncHandler(async(req,res)=>{
+    const existingVideo = await Video.findById(videoId);
+
+    if (
+    existingVideo.owner.toString() !==
+    req.user._id.toString()
+    ) {
+    throw new ApiError(403, "Unauthorized");
+    }
     const {videoId} = req.params;
 
     if (!videoId) {

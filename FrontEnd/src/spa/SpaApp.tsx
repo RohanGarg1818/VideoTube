@@ -71,6 +71,7 @@ export function SpaApp() {
               <Route path="/subscriptions" element={<SubscriptionsPage />} />
               <Route path="/playlists" element={<MyPlaylistsPage />} />
               <Route path="/settings" element={<ProfileSettingsPage />} />
+              <Route path="/video/edit/:videoId" element={<EditVideoPage />} />
               <Route path="/settings/password" element={<ChangePasswordPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

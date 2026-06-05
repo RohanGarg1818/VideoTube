@@ -49,69 +49,47 @@ const addVideos = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200,playlist,"video added successfully"));
 })
 
-const getPlaylist = asyncHandler(async(req,res)=>{
-    const {playlistId} = req.params;
+const getPlaylist = asyncHandler(async (req, res) => {
+    const { playlistId } = req.params;
 
     if (!playlistId) {
-        throw new ApiError(400,"playlist id is missing")
+        throw new ApiError(400, "playlist id is missing");
     }
 
     const playlist = await Playlist.aggregate([
         {
             $match: {
-            _id: new mongoose.Types.ObjectId(playlistId)
-            }
-        },
-        {
-            $lookup: {
-            from: "videos",
-            localField: "videos",
-            foreignField: "_id",
-            as: "videos"
-            }
-        },
-        {
-            $lookup: {
-            from: "users",
-            localField: "owner",
-            foreignField: "_id",
-            as: "owner"
-            }
-        },
-        {
-            $addFields: {
-            owner: {
-                $first: "$owner"
-            }
-            }
-        }
-    ]);
-
-    if (!playlist?.length) {
-        throw new ApiError(404,"playlist not found")
-    }
-
-    return res.status(200).json(new ApiResponse(200,playlist[0],"playlist fetched"))
-})
-
-const getUserPlaylist = asyncHandler(async(req,res)=>{
-    const {userId} = req.params;
-
-    if(!userId){
-        throw new ApiError(400,"user id is missing")
-    }
-
-    const playlist = await Playlist.aggregate([
-        {
-            $match: {
-                owner: new mongoose.Types.ObjectId(userId)
+                _id: new mongoose.Types.ObjectId(playlistId)
             }
         },
         {
             $lookup: {
                 from: "videos",
-                localField: "videos",
-                foreignField: "_id",
+                let: { videoIds: "$videos" },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $in: ["$_id", "$$videoIds"]
+                            }
+                        }
+                    },
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner"
+                        }
+                    },
+                    {
+                        $addFields: {
+                            owner: {
+                                $first: "$owner"
+                            }
+                        }
+                    }
+                ],
                 as: "videos"
             }
         },
@@ -131,12 +109,87 @@ const getUserPlaylist = asyncHandler(async(req,res)=>{
             }
         }
     ]);
+
     if (!playlist?.length) {
-        return res.status(200).json(new ApiResponse(200,[], "no playlists found"));
+        throw new ApiError(404, "playlist not found");
     }
 
-    return res.status(200).json(new ApiResponse(200,playlist, "playlists fetched"));
-})
+    return res
+        .status(200)
+        .json(new ApiResponse(200, playlist[0], "playlist fetched"));
+});
+
+const getUserPlaylist = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+
+    if (!userId) {
+        throw new ApiError(400, "user id is missing");
+    }
+
+    const playlist = await Playlist.aggregate([
+        {
+            $match: {
+                owner: new mongoose.Types.ObjectId(userId)
+            }
+        },
+        {
+            $lookup: {
+                from: "videos",
+                let: { videoIds: "$videos" },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $in: ["$_id", "$$videoIds"]
+                            }
+                        }
+                    },
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner"
+                        }
+                    },
+                    {
+                        $addFields: {
+                            owner: {
+                                $first: "$owner"
+                            }
+                        }
+                    }
+                ],
+                as: "videos"
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner"
+            }
+        },
+        {
+            $addFields: {
+                owner: {
+                    $first: "$owner"
+                }
+            }
+        }
+    ]);
+
+    if (!playlist?.length) {
+        return res
+            .status(200)
+            .json(new ApiResponse(200, [], "no playlists found"));
+    }
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, playlist, "playlists fetched"));
+});
 
 const deletePlaylist = asyncHandler(async(req,res)=>{
     const {playlistId} = req.params;

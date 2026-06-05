@@ -28,6 +28,7 @@ export function VideoPage() {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>("");
   const [savingPlaylist, setSavingPlaylist] = useState(false);
   const owner = video ? getOwner(video) : undefined;
+  const isOwner = owner?._id === user?._id;
   const channelId = typeof video?.owner === "string" ? video.owner : owner?._id ?? "";
 
   const {
@@ -178,8 +179,8 @@ export function VideoPage() {
         {formatViews(video.views)} views · {Math.max(0, video.likes ?? 0)} likes · {timeAgo(video.createdAt)}
       </p>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 mt-4 border-b border-border pb-4">
-        <div className="flex items-center justify-between w-full">
+      <div className="flex items-center justify-between gap-4 mt-4 border-b border-border pb-4 flex-wrap">
+        <div className="flex items-center gap-3 min-w-0">
           {owner && (
             <Link
               to={`/channel/${owner.username}`}
@@ -213,83 +214,122 @@ export function VideoPage() {
             onClick={handleSub}
             variant={subscribed ? "secondary" : "default"}
             size="sm"
-            className={
-              subscribed
-                ? "bg-zinc-700 text-white hover:bg-zinc-700/90 dark:bg-zinc-200 dark:text-zinc-900"
-                : ""
-            }
+            className="ml-2"
           >
             {subscribed ? (
               <UserCheck className="h-4 w-4 mr-2" />
             ) : (
               <UserPlus className="h-4 w-4 mr-2" />
             )}
-
             {subscribed ? "Subscribed" : "Subscribe"}
           </Button>
         </div>
-        <Button onClick={handleLike} variant={liked ? "default" : "secondary"} size="sm" disabled={loadingLike}>
-          <ThumbsUp className="h-4 w-4 mr-2" fill={liked ? "currentColor" : "none"} />
-          {liked ? "Liked" : "Like"}
-        </Button>
+
+        <div className="flex items-center gap-2">
+          {user && (
+            <Dialog
+              open={playlistDialogOpen}
+              onOpenChange={setPlaylistDialogOpen}
+            >
+              <DialogTrigger asChild>
+                <Button size="sm" variant="secondary">
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add to playlist
+                </Button>
+              </DialogTrigger>
+
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add video to playlist</DialogTitle>
+                </DialogHeader>
+
+                <div className="space-y-4 py-2">
+                  {playlistsLoading ? (
+                    <p className="text-sm text-muted-foreground">
+                      Loading playlists…
+                    </p>
+                  ) : playlistsError ? (
+                    <p className="text-sm text-destructive">
+                      Unable to load playlists
+                    </p>
+                  ) : playlists?.length ? (
+                    <label className="space-y-2 text-sm">
+                      <span className="font-medium">
+                        Choose playlist
+                      </span>
+
+                      <select
+                        value={selectedPlaylistId}
+                        onChange={(e) =>
+                          setSelectedPlaylistId(e.target.value)
+                        }
+                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="">
+                          Select a playlist
+                        </option>
+
+                        {playlists.map((playlist) => (
+                          <option
+                            key={playlist._id}
+                            value={playlist._id}
+                          >
+                            {playlist.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No playlists found. Create one first.
+                    </p>
+                  )}
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    disabled={
+                      savingPlaylist ||
+                      !selectedPlaylistId ||
+                      !playlists?.length
+                    }
+                    onClick={addToPlaylist}
+                  >
+                    {savingPlaylist
+                      ? "Adding…"
+                      : "Add to playlist"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          <Button
+            onClick={handleLike}
+            variant={liked ? "default" : "secondary"}
+            size="sm"
+            disabled={loadingLike}
+          >
+            <ThumbsUp
+              className="h-4 w-4 mr-2"
+              fill={liked ? "currentColor" : "none"}
+            />
+            {liked ? "Liked" : "Like"}
+          </Button>
+          {isOwner && (
+            <Link to={`/video/edit/${video._id}`}>
+              <Button variant="outline" size="sm">
+                Edit Video
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       {video.description && (
         <div className="mt-4 rounded-lg bg-muted/50 p-4 text-sm whitespace-pre-wrap">
           {video.description}
-        </div>
-      )}
-
-      {user && (
-        <div className="mt-4">
-          <Dialog open={playlistDialogOpen} onOpenChange={setPlaylistDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="secondary" className="mr-2">
-                <PlusCircle className="h-4 w-4 mr-2" /> Add to playlist
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add video to playlist</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-2">
-                {playlistsLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading playlists…</p>
-                ) : playlistsError ? (
-                  <p className="text-sm text-destructive">Unable to load playlists</p>
-                ) : playlists?.length ? (
-                  <label className="space-y-2 text-sm">
-                    <span className="font-medium">Choose playlist</span>
-                    <select
-                      value={selectedPlaylistId}
-                      onChange={(e) => setSelectedPlaylistId(e.target.value)}
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-                    >
-                      <option value="">Select a playlist</option>
-                      {playlists.map((playlist) => (
-                        <option key={playlist._id} value={playlist._id}>
-                          {playlist.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No playlists found. Create one first.</p>
-                )}
-              </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  disabled={
-                    savingPlaylist || !selectedPlaylistId || !playlists?.length
-                  }
-                  onClick={addToPlaylist}
-                >
-                  {savingPlaylist ? "Adding…" : "Add to playlist"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </div>
       )}
 
