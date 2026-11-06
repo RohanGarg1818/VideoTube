@@ -1,185 +1,288 @@
+import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { Clock, Eye, ListVideo, Pencil, Play, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
-import { PlaylistAPI } from "../services/endpoints";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { PlaylistAPI, type Playlist } from "../services/endpoints";
 import { useAsync } from "../hooks/useAsync";
 import { EmptyState, ErrorState } from "../components/EmptyState";
+import { VideoRow } from "../components/VideoCard";
+import { UserAvatar } from "../components/UserAvatar";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { useAuthStore } from "../store/authStore";
 import { apiErrorMessage, isNotFoundError } from "../services/api";
+import {
+  formatCount,
+  formatLongDuration,
+  plural,
+  timeAgo,
+} from "../lib/format";
 import { toast } from "sonner";
-import { getOwner } from "../lib/format";
-import { timeAgo } from "../lib/format";
 
 export function PlaylistPage() {
   const { playlistId } = useParams<{ playlistId: string }>();
   const me = useAuthStore((s) => s.user);
   const navigate = useNavigate();
-  const { data, loading, error, errorMessage, refetch } = useAsync(
-    () => (playlistId ? PlaylistAPI.get(playlistId) : Promise.resolve(null)),
-    [playlistId],
-  );
+  const { data, loading, error, errorMessage, refetch, setData } =
+    useAsync<Playlist | null>(
+      () => (playlistId ? PlaylistAPI.get(playlistId) : Promise.resolve(null)),
+      [playlistId],
+    );
 
-  if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
-
-  if (error) {
-    if (isNotFoundError(error)) {
-      return <ErrorState message="Playlist not found" onRetry={refetch} />;
-    }
-    return <ErrorState message={errorMessage || "Failed to load playlist"} onRetry={refetch} />;
-  }
-
+  if (loading) return <div className="skeleton h-80 rounded-3xl" />;
+  if (error)
+    return (
+      <ErrorState
+        message={
+          isNotFoundError(error) ? "Playlist not found" : (errorMessage ?? "")
+        }
+        onRetry={refetch}
+      />
+    );
   if (!data || !playlistId) return null;
 
-  const owner =
-    typeof data.owner === "object"
-      ? data.owner
-      : undefined;
-
-  const isMine = owner?._id === me?._id;
-  const remove = async () => {
-    if (!confirm("Delete this playlist?")) return;
-    try {
-      await PlaylistAPI.remove(playlistId);
-      toast.success("Playlist deleted");
-      navigate("/playlists");
-    } catch (e) {
-      toast.error(apiErrorMessage(e));
-    }
-  };
+  const owner = typeof data.owner === "object" ? data.owner : undefined;
+  const isMine = Boolean(owner?._id && owner._id === me?._id);
+  const videos = data.videos ?? [];
+  const cover = videos.find((v) => v.thumbnail)?.thumbnail;
 
   const removeVideo = async (videoId: string) => {
+    setData({ ...data, videos: videos.filter((v) => v._id !== videoId) });
     try {
       await PlaylistAPI.removeVideo(playlistId, videoId);
       toast.success("Removed from playlist");
-      refetch();
     } catch (e) {
       toast.error(apiErrorMessage(e));
+      refetch();
     }
   };
 
   return (
-    <div>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold">
-              {data.name}
-            </h1>
-
-            <span className="rounded-full bg-muted px-3 py-1 text-sm text-muted-foreground">
-              {data.videos?.length ?? 0} videos
-            </span>
-          </div>
-
-          {data.description && (
-            <p className="text-muted-foreground mt-1">
-              {data.description}
-            </p>
+    <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
+      <aside className="lg:sticky lg:top-24 lg:self-start">
+        <div className="glass relative animate-fade-up overflow-hidden rounded-3xl p-5">
+          {cover && (
+            <img
+              src={cover}
+              alt=""
+              aria-hidden
+              className="absolute inset-0 -z-10 h-full w-full scale-125 object-cover opacity-30 blur-3xl"
+            />
           )}
-
+          <div className="aspect-video overflow-hidden rounded-2xl bg-gradient-to-br from-violet-800/60 to-fuchsia-800/40 ring-1 ring-white/10">
+            {cover ? (
+              <img src={cover} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <ListVideo className="m-auto h-full w-10 text-white/40" />
+            )}
+          </div>
+          <h1 className="mt-5 text-2xl font-extrabold tracking-tight">
+            {data.name}
+          </h1>
           {owner && (
             <Link
               to={`/channel/${owner.username}`}
-              className="text-sm text-muted-foreground hover:underline"
+              className="mt-3 flex items-center gap-2 text-sm hover:underline"
             >
-              @{owner.username}
+              <UserAvatar
+                src={owner.avatar}
+                name={owner.fullName}
+                className="h-7 w-7"
+              />{" "}
+              {owner.fullName}
             </Link>
           )}
-        </div>
+          <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <ListVideo className="h-3.5 w-3.5" />{" "}
+              {plural(videos.length, "video")}
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5" />{" "}
+              {formatLongDuration(data.totalDuration)}
+            </span>
+            <span className="flex items-center gap-1">
+              <Eye className="h-3.5 w-3.5" />{" "}
+              {formatCount(data.totalViews ?? 0)} views
+            </span>
+          </div>
+          {data.description && (
+            <p className="mt-4 whitespace-pre-wrap text-sm text-foreground/80">
+              {data.description}
+            </p>
+          )}
+          {data.updatedAt && (
+            <p className="mt-2 text-xs text-muted-foreground/70">
+              Updated {timeAgo(data.updatedAt)}
+            </p>
+          )}
 
-        {isMine && (
-          <Button variant="destructive" size="sm" onClick={remove}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete playlist
-          </Button>
-        )}
-      </div>
-
-      {!data.videos?.length ? (
-        <EmptyState title="No videos in this playlist" />
-      ) : (
-        <div className="space-y-4 mt-6">
-          {data.videos.map((v) => {
-            const videoOwner = getOwner(v);
-
-            return (
-              <div
-                key={v._id}
-                className="flex gap-4 rounded-lg border border-border p-3"
-              >
-                <Link
-                  to={`/watch/${v._id}`}
-                  className="flex gap-4 flex-1 min-w-0"
-                >
-                  <div className="w-64 shrink-0 overflow-hidden rounded-lg">
-                    {v.thumbnail ? (
-                      <img
-                        src={v.thumbnail}
-                        alt={v.title}
-                        className="aspect-video w-full object-cover"
-                      />
-                    ) : (
-                      <div className="aspect-video w-full bg-muted" />
-                    )}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-semibold text-lg line-clamp-2">
-                      {v.title}
-                    </h3>
-
-                    {videoOwner && (
-                      <div className="mt-3 flex items-center gap-3">
-                        <img
-                          src={videoOwner.avatar}
-                          alt={videoOwner.fullName}
-                          className="h-8 w-8 rounded-full object-cover"
-                        />
-
-                        <div>
-                          <p className="text-sm font-medium">
-                            {videoOwner.fullName}
-                          </p>
-
-                          <p className="text-xs text-muted-foreground">
-                            @{videoOwner.username}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {v.description && (
-                      <p className="mt-3 text-sm text-muted-foreground line-clamp-2">
-                        {v.description}
-                      </p>
-                    )}
-
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Uploaded {timeAgo(v.createdAt)}
-                    </p>
-                  </div>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {videos[0] && (
+              <Button className="flex-1" asChild>
+                <Link to={`/watch/${videos[0]._id}`}>
+                  <Play className="fill-current" /> Play all
                 </Link>
-
-                {isMine && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="self-start"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      removeVideo(v._id);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Remove
-                  </Button>
-                )}
-              </div>
-            );
-          })}
+              </Button>
+            )}
+            {isMine && (
+              <>
+                <EditPlaylistDialog
+                  playlist={data}
+                  onSaved={(p) =>
+                    setData({
+                      ...data,
+                      name: p.name,
+                      description: p.description,
+                    })
+                  }
+                />
+                <ConfirmDialog
+                  title="Delete playlist?"
+                  description="The videos themselves won't be deleted."
+                  onConfirm={async () => {
+                    try {
+                      await PlaylistAPI.remove(playlistId);
+                      toast.success("Playlist deleted");
+                      navigate("/playlists");
+                    } catch (e) {
+                      toast.error(apiErrorMessage(e));
+                    }
+                  }}
+                  trigger={
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      aria-label="Delete playlist"
+                    >
+                      <Trash2 />
+                    </Button>
+                  }
+                />
+              </>
+            )}
+          </div>
         </div>
-      )}
+      </aside>
+
+      <section>
+        {!videos.length ? (
+          <EmptyState
+            icon={ListVideo}
+            title="This playlist is empty"
+            description="Use the Save button on any video to add it here."
+          />
+        ) : (
+          <div className="glass space-y-1 rounded-3xl p-3">
+            {videos.map((v, i) => (
+              <div key={v._id} className="flex items-center gap-2">
+                <span className="w-6 shrink-0 text-center text-sm text-muted-foreground">
+                  {i + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <VideoRow
+                    video={v}
+                    actions={
+                      isMine && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+                          onClick={() => removeVideo(v._id)}
+                          aria-label="Remove from playlist"
+                        >
+                          <X />
+                        </Button>
+                      )
+                    }
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
+  );
+}
+
+function EditPlaylistDialog({
+  playlist,
+  onSaved,
+}: {
+  playlist: Playlist;
+  onSaved: (p: Playlist) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(playlist.name);
+  const [description, setDescription] = useState(playlist.description ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const p = await PlaylistAPI.update(playlist._id, {
+        name: name.trim(),
+        description: description.trim(),
+      });
+      onSaved(p);
+      setOpen(false);
+      toast.success("Playlist updated");
+    } catch (e) {
+      toast.error(apiErrorMessage(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="secondary" size="icon" aria-label="Edit playlist">
+          <Pencil />
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit playlist</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="pl-name">Name</Label>
+            <Input
+              id="pl-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={100}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="pl-desc">Description</Label>
+            <Textarea
+              id="pl-desc"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              maxLength={1000}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button onClick={save} disabled={saving || !name.trim()}>
+            {saving ? "Saving…" : "Save"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

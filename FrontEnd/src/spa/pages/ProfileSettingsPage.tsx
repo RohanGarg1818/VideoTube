@@ -1,96 +1,141 @@
 import { useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
+import { KeyRound, Loader2, Save, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AuthAPI } from "../services/endpoints";
 import { useAuthStore } from "../store/authStore";
 import { apiErrorMessage } from "../services/api";
+import { ImageDrop } from "../components/ImageDrop";
+import { PageHeader } from "../components/PageHeader";
 import { toast } from "sonner";
 
 export function ProfileSettingsPage() {
   const user = useAuthStore((s) => s.user)!;
   const setUser = useAuthStore((s) => s.setUser);
   const [fullName, setFullName] = useState(user.fullName);
-  const [email, setEmail] = useState(user.email);
+  const [email, setEmail] = useState(user.email ?? "");
   const [savingAccount, setSavingAccount] = useState(false);
+  const [uploading, setUploading] = useState<"avatar" | "cover" | null>(null);
+
+  const dirty =
+    fullName.trim() !== user.fullName || email.trim() !== (user.email ?? "");
 
   const saveAccount = async (e: FormEvent) => {
     e.preventDefault();
     setSavingAccount(true);
     try {
-      const updated = await AuthAPI.updateAccount({ fullName, email });
-      setUser(updated);
+      setUser(
+        await AuthAPI.updateAccount({
+          fullName: fullName.trim(),
+          email: email.trim(),
+        }),
+      );
       toast.success("Profile updated");
-    } catch (e) {
-      toast.error(apiErrorMessage(e));
+    } catch (err) {
+      toast.error(apiErrorMessage(err));
     } finally {
       setSavingAccount(false);
     }
   };
 
-  const updateAvatar = async (file: File | null) => {
+  const upload = async (kind: "avatar" | "cover", file: File | null) => {
     if (!file) return;
+    setUploading(kind);
     try {
-      const updated = await AuthAPI.updateAvatar(file);
-      setUser(updated);
-      toast.success("Avatar updated");
-    } catch (e) {
-      toast.error(apiErrorMessage(e));
-    }
-  };
-
-  const updateCover = async (file: File | null) => {
-    if (!file) return;
-    try {
-      const updated = await AuthAPI.updateCover(file);
-      setUser(updated);
-      toast.success("Cover updated");
-    } catch (e) {
-      toast.error(apiErrorMessage(e));
+      setUser(
+        kind === "avatar"
+          ? await AuthAPI.updateAvatar(file)
+          : await AuthAPI.updateCover(file),
+      );
+      toast.success(kind === "avatar" ? "Avatar updated" : "Cover updated");
+    } catch (err) {
+      toast.error(apiErrorMessage(err));
+    } finally {
+      setUploading(null);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <Card>
-        <CardHeader><CardTitle>Profile</CardTitle></CardHeader>
-        <CardContent>
-          <form onSubmit={saveAccount} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full name</Label>
-              <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-            <Button type="submit" disabled={savingAccount}>{savingAccount ? "Saving…" : "Save profile"}</Button>
-          </form>
-        </CardContent>
-      </Card>
+    <div className="mx-auto max-w-3xl">
+      <PageHeader
+        icon={Settings}
+        title="Settings"
+        subtitle="Manage how your channel looks"
+        actions={
+          <Button variant="outline" asChild>
+            <Link to="/settings/password">
+              <KeyRound /> Change password
+            </Link>
+          </Button>
+        }
+      />
 
-      <Card>
-        <CardHeader><CardTitle>Avatar</CardTitle></CardHeader>
-        <CardContent className="flex items-center gap-4">
-          <Avatar className="h-16 w-16">
-            <AvatarImage src={user.avatar} />
-            <AvatarFallback>{user.fullName?.[0]?.toUpperCase() ?? "U"}</AvatarFallback>
-          </Avatar>
-          <Input type="file" accept="image/*" onChange={(e) => updateAvatar(e.target.files?.[0] ?? null)} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle>Cover image</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          {user.coverImage && (
-            <img src={user.coverImage} alt="Cover" className="w-full aspect-[6/1] object-cover rounded-md" />
+      <section className="glass mb-6 rounded-3xl p-6">
+        <h2 className="mb-4 font-semibold">Branding</h2>
+        <div className="relative mb-14">
+          <ImageDrop
+            file={null}
+            onChange={(f) => upload("cover", f)}
+            existingUrl={user.coverImage || undefined}
+            label="Upload cover image"
+            hint="Drop an image or click"
+          />
+          <div className="absolute -bottom-12 left-6 rounded-full bg-[var(--background)] p-1">
+            <ImageDrop
+              file={null}
+              onChange={(f) => upload("avatar", f)}
+              existingUrl={user.avatar}
+              label="Avatar"
+              shape="round"
+              className="h-24 w-24"
+            />
+          </div>
+          {uploading && (
+            <span className="absolute right-3 top-3 flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-xs backdrop-blur">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Uploading{" "}
+              {uploading}…
+            </span>
           )}
-          <Input type="file" accept="image/*" onChange={(e) => updateCover(e.target.files?.[0] ?? null)} />
-        </CardContent>
-      </Card>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Click or drag an image onto the cover or avatar to replace it.
+        </p>
+      </section>
+
+      <form onSubmit={saveAccount} className="glass space-y-5 rounded-3xl p-6">
+        <h2 className="font-semibold">Account</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="fullName">Full name</Label>
+            <Input
+              id="fullName"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              maxLength={60}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="username">Username</Label>
+            <Input id="username" value={`@${user.username}`} disabled />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+        <Button type="submit" disabled={savingAccount || !dirty}>
+          <Save /> {savingAccount ? "Saving…" : "Save changes"}
+        </Button>
+      </form>
     </div>
   );
 }

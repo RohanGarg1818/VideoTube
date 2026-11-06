@@ -1,16 +1,12 @@
-import mongoose,{Schema, trusted} from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
-const tweetSchema=new Schema({
-    content:{
-        type:String,
-        required:true
-        
-    },
-    owner:{
-        type:Schema.Types.ObjectId,
-        ref:"User"
-    }
+// Legacy model – superseded by `Community`. Kept so old documents remain readable.
+const tweetSchema = new Schema(
+  {
+    content: { type: String, required: true },
+    owner: { type: Schema.Types.ObjectId, ref: "User" },
+  },
+  { timestamps: true }
+);
 
-},{timestamps:true})
-
-export const Tweet =mongoose.model("Tweet",tweetSchema)
+export const Tweet = mongoose.model("Tweet", tweetSchema);

@@ -1,13 +1,26 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Loader2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuthAPI } from "../services/endpoints";
 import { apiErrorMessage } from "../services/api";
 import { useAuthStore } from "../store/authStore";
+import { ImageDrop } from "../components/ImageDrop";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+function strength(pw: string) {
+  let s = 0;
+  if (pw.length >= 8) s++;
+  if (pw.length >= 12) s++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) s++;
+  if (/\d/.test(pw)) s++;
+  if (/[^A-Za-z0-9]/.test(pw)) s++;
+  return Math.min(s, 4);
+}
+const STRENGTH = ["Too short", "Weak", "Okay", "Good", "Strong"];
 
 export function SignupPage() {
   const login = useAuthStore((s) => s.login);
@@ -20,77 +33,159 @@ export function SignupPage() {
   const [avatar, setAvatar] = useState<File | null>(null);
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const score = strength(password);
 
   const handle = async (e: FormEvent) => {
     e.preventDefault();
-    if (!avatar) {
-      toast.error("Avatar is required");
-      return;
-    }
+    setError(null);
+    if (!avatar) return setError("Please choose an avatar image");
+    if (password.length < 8)
+      return setError("Password must be at least 8 characters");
     setLoading(true);
     try {
       const form = new FormData();
-      form.append("fullName", fullName);
-      form.append("email", email);
-      form.append("username", username);
+      form.append("fullName", fullName.trim());
+      form.append("email", email.trim());
+      form.append("username", username.trim().toLowerCase());
       form.append("password", password);
       form.append("avatar", avatar);
       if (coverImage) form.append("coverImage", coverImage);
       await AuthAPI.register(form);
-      await login({ email, password });
-      toast.success("Account created");
+      await login({ email: email.trim(), password });
+      toast.success("Welcome to VideoTube 🎉");
       navigate("/", { replace: true });
-    } catch (e) {
-      toast.error(apiErrorMessage(e, "Could not register"));
+    } catch (err) {
+      setError(apiErrorMessage(err, "Could not create your account"));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Card className="w-full max-w-lg">
-      <CardHeader>
-        <CardTitle className="text-2xl">Create your account</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handle} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full name</Label>
-              <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+    <div className="glass-strong w-full max-w-lg rounded-3xl p-8">
+      <h2 className="text-2xl font-bold tracking-tight">Create your account</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Start your channel in less than a minute.
+      </p>
+
+      <form onSubmit={handle} className="mt-6 space-y-4">
+        <div className="relative mb-12">
+          <ImageDrop
+            file={coverImage}
+            onChange={setCoverImage}
+            label="Cover image (optional)"
+            hint="Wide images look best"
+          />
+          <div className="absolute -bottom-10 left-5 rounded-full bg-[var(--background)] p-1">
+            <ImageDrop
+              file={avatar}
+              onChange={setAvatar}
+              label="Avatar *"
+              shape="round"
+              className="h-20 w-20"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="fullName">Full name</Label>
+            <Input
+              id="fullName"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+              maxLength={60}
+              placeholder="Rohan Garg"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              value={username}
+              onChange={(e) =>
+                setUsername(
+                  e.target.value.toLowerCase().replace(/[^a-z0-9_.-]/g, ""),
+                )
+              }
+              required
+              minLength={3}
+              maxLength={30}
+              placeholder="rohan_dev"
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+            placeholder="you@example.com"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={8}
+            autoComplete="new-password"
+            placeholder="At least 8 characters"
+          />
+          {password && (
+            <div className="flex items-center gap-2">
+              <div className="flex flex-1 gap-1">
+                {[0, 1, 2, 3].map((i) => (
+                  <span
+                    key={i}
+                    className={cn(
+                      "h-1 flex-1 rounded-full bg-white/10 transition-colors",
+                      i < score &&
+                        (score <= 1
+                          ? "bg-red-400"
+                          : score === 2
+                            ? "bg-amber-400"
+                            : "bg-emerald-400"),
+                    )}
+                  />
+                ))}
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {STRENGTH[score]}
+              </span>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="avatar">Avatar *</Label>
-            <Input id="avatar" type="file" accept="image/*" onChange={(e) => setAvatar(e.target.files?.[0] ?? null)} required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cover">Cover image (optional)</Label>
-            <Input id="cover" type="file" accept="image/*" onChange={(e) => setCoverImage(e.target.files?.[0] ?? null)} />
-          </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Creating…" : "Create account"}
-          </Button>
-          <p className="text-sm text-center text-muted-foreground">
-            Already have an account?{" "}
-            <Link to="/login" className="text-primary hover:underline">
-              Sign in
-            </Link>
+          )}
+        </div>
+
+        {error && (
+          <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+            {error}
           </p>
-        </form>
-      </CardContent>
-    </Card>
+        )}
+
+        <Button type="submit" size="lg" className="w-full" disabled={loading}>
+          {loading ? <Loader2 className="animate-spin" /> : <UserPlus />}
+          {loading ? "Creating your channel…" : "Create account"}
+        </Button>
+        <p className="text-center text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="font-semibold text-fuchsia-300 hover:underline"
+          >
+            Sign in
+          </Link>
+        </p>
+      </form>
+    </div>
   );
 }

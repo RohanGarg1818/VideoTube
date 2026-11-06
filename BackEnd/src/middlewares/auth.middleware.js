@@ -1,41 +1,44 @@
-import asyncHandler from "../utils/asyncHandler.js"
-import {ApiError }from "../utils/ApiError.js"
-import jwt from "jsonwebtoken"
-import { User } from "../models/user.model.js"
+import jwt from "jsonwebtoken";
+import { config } from "../config/env.js";
+import { ApiError } from "../utils/ApiError.js";
+import asyncHandler from "../utils/asyncHandler.js";
+import { User } from "../models/user.model.js";
 
-export const verifyJWT=asyncHandler(async(req,_,next)=>{
-    try {
-        const token=req.cookies?.accessToken||req.header("Authorization")?.replace("Bearer ","" )?.trim()
-        if(!token){
-            throw new ApiError(401,"Unauthorized request")
-        }
-        const decodedToken =jwt.verify(token,process.env.ACCESS_TOKEN_SECRET)
-        const user=await User.findById(decodedToken?._id).select("-password,-refreshToken")
-        if(!user){
-            throw new ApiError(401,"Invalid Access Token")
-        }
-    
-        req.user=user;
-        next()
-    } catch (error) {
-        throw new ApiError(401,error?.message||"Invalid access token")
-    }
-     
-})
+export const extractAccessToken = (req) => {
+  const header = req.header("Authorization");
+  if (header?.startsWith("Bearer ")) return header.slice(7).trim();
+  return req.cookies?.accessToken || null;
+};
 
-export const optionalVerifyJWT=asyncHandler(async(req,_,next)=>{
-    const token=req.cookies?.accessToken||req.header("Authorization")?.replace("Bearer ","" )?.trim()
-    if(!token){
-        return next()
-    }
+async function resolveUser(token) {
+  let decoded;
+  try {
+    decoded = jwt.verify(token, config.jwt.accessSecret);
+  } catch (err) {
+    throw ApiError.unauthorized(err.name === "TokenExpiredError" ? "Access token expired" : "Invalid access token");
+  }
+  const user = await User.findById(decoded?._id);
+  if (!user) throw ApiError.unauthorized("Invalid access token");
+  return user;
+}
+
+/** Requires a valid access token (Bearer header or httpOnly cookie). */
+export const verifyJWT = asyncHandler(async (req, _res, next) => {
+  const token = extractAccessToken(req);
+  if (!token) throw ApiError.unauthorized("Authentication required");
+  req.user = await resolveUser(token);
+  next();
+});
+
+/** Attaches `req.user` when a valid token is present, otherwise continues anonymously. */
+export const optionalVerifyJWT = asyncHandler(async (req, _res, next) => {
+  const token = extractAccessToken(req);
+  if (token) {
     try {
-        const decodedToken =jwt.verify(token,process.env.ACCESS_TOKEN_SECRET)
-        const user=await User.findById(decodedToken?._id).select("-password,-refreshToken")
-        if(user){
-            req.user=user;
-        }
+      req.user = await resolveUser(token);
     } catch {
-        // ignore invalid token and continue without user
+      /* anonymous access */
     }
-    next()
-})
+  }
+  next();
+});

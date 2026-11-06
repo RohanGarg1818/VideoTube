@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router } from "express";
 import {
   registerUser,
   loginUser,
@@ -10,29 +10,53 @@ import {
   updateUserAvatar,
   updateUserCoverImage,
   getUserChannelProfile,
-  getWatchHistory
-} from '../controllers/user.controller.js';
-
-import { verifyJWT } from '../middlewares/auth.middleware.js';
-import { upload } from '../middlewares/multer.middleware.js';
+  getWatchHistory,
+  clearWatchHistory,
+  removeFromWatchHistory,
+} from "../controllers/user.controller.js";
+import { verifyJWT, optionalVerifyJWT } from "../middlewares/auth.middleware.js";
+import { upload, limitImageSize } from "../middlewares/upload.middleware.js";
+import { authLimiter } from "../middlewares/rateLimit.middleware.js";
+import { validate } from "../middlewares/validate.middleware.js";
+import {
+  registerSchema,
+  loginSchema,
+  refreshSchema,
+  changePasswordSchema,
+  updateAccountSchema,
+  channelSchema,
+} from "../validators/user.validator.js";
+import { idParams } from "../validators/common.js";
 
 const router = Router();
 
-router.post('/register', upload.fields([
-  { name: 'avatar', maxCount: 1 },
-  { name: 'coverImage', maxCount: 1 }
-]), registerUser);
+// Public auth
+router.post(
+  "/register",
+  authLimiter,
+  upload.fields([
+    { name: "avatar", maxCount: 1 },
+    { name: "coverImage", maxCount: 1 },
+  ]),
+  limitImageSize,
+  validate(registerSchema),
+  registerUser
+);
+router.post("/login", authLimiter, validate(loginSchema), loginUser);
+router.post("/refresh-token", authLimiter, validate(refreshSchema), refreshAccessToken);
 
-router.post('/login', loginUser);
-router.post('/refresh-token', refreshAccessToken);
+// Authenticated
+router.post("/logout", verifyJWT, logoutUser);
+router.post("/change-password", verifyJWT, authLimiter, validate(changePasswordSchema), changeCurrentPassword);
+router.get("/current-user", verifyJWT, getCurrentUser);
+router.patch("/update-account", verifyJWT, validate(updateAccountSchema), updateAccountDetails);
+router.patch("/avatar", verifyJWT, upload.single("avatar"), limitImageSize, updateUserAvatar);
+router.patch("/cover-image", verifyJWT, upload.single("coverImage"), limitImageSize, updateUserCoverImage);
+router.get("/watch-history", verifyJWT, getWatchHistory);
+router.delete("/watch-history", verifyJWT, clearWatchHistory);
+router.delete("/watch-history/:videoId", verifyJWT, validate({ params: idParams("videoId") }), removeFromWatchHistory);
 
-router.post('/logout', verifyJWT, logoutUser);
-router.post('/change-password', verifyJWT, changeCurrentPassword);
-router.get('/current-user', verifyJWT, getCurrentUser);
-router.patch('/update-account', verifyJWT, updateAccountDetails);
-router.patch('/avatar', verifyJWT, upload.single('avatar'), updateUserAvatar);
-router.patch('/cover-image', verifyJWT, upload.single('coverImage'), updateUserCoverImage);
-router.get('/watch-history', verifyJWT, getWatchHistory);
-router.get('/c/:username', getUserChannelProfile);
+// Public channel profile (personalised `isSubscribed` when signed in)
+router.get("/c/:username", optionalVerifyJWT, validate(channelSchema), getUserChannelProfile);
 
 export default router;

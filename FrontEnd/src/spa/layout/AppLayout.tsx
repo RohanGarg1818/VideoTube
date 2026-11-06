@@ -1,17 +1,33 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Navbar } from "./Navbar";
 import { Sidebar } from "./Sidebar";
-import { useState } from "react";
+import { Aurora } from "./Aurora";
+
+const isDesktop = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(min-width: 1024px)").matches;
 
 export function AppLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(isDesktop);
+  const location = useLocation();
+
+  // Close the drawer after navigating on mobile and scroll to top on route change
+  useEffect(() => {
+    if (!isDesktop()) setSidebarOpen(false);
+    window.scrollTo({ top: 0 });
+  }, [location.pathname]);
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen text-foreground">
+      <Aurora />
       <Navbar onMenuClick={() => setSidebarOpen((v) => !v)} />
-      <div className="flex pt-14">
+      <div className="flex pt-[4.5rem]">
         <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main className="flex-1 min-w-0 px-4 md:px-6 py-6">
-          <Outlet />
+        <main className="min-w-0 flex-1 px-3 pb-16 pt-4 sm:px-5 lg:px-8">
+          <div className="mx-auto w-full max-w-[1600px]">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

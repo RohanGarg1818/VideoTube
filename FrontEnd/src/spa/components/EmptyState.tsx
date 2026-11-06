@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
-import { Inbox } from "lucide-react";
+import { AlertTriangle, Inbox, RotateCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function EmptyState({
   icon: Icon = Inbox,
@@ -13,32 +14,43 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center text-center py-16 px-4">
-      <div className="rounded-full bg-muted p-4 mb-4">
-        <Icon className="h-8 w-8 text-muted-foreground" />
+    <div className="glass mx-auto flex max-w-lg animate-fade-up flex-col items-center justify-center rounded-3xl px-6 py-14 text-center">
+      <div className="relative mb-5">
+        <div className="absolute inset-0 rounded-full bg-fuchsia-500/30 blur-2xl" />
+        <div className="relative grid h-16 w-16 place-items-center rounded-2xl border border-white/10 bg-white/5">
+          <Icon className="h-7 w-7 text-fuchsia-300" />
+        </div>
       </div>
       <h3 className="text-lg font-semibold">{title}</h3>
       {description && (
-        <p className="mt-1 text-sm text-muted-foreground max-w-sm">{description}</p>
+        <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
+          {description}
+        </p>
       )}
-      {action && <div className="mt-4">{action}</div>}
+      {action && <div className="mt-6">{action}</div>}
     </div>
   );
 }
 
-export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+export function ErrorState({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry?: () => void;
+}) {
   return (
-    <div className="flex flex-col items-center justify-center text-center py-16 px-4">
-      <h3 className="text-lg font-semibold text-destructive">Something went wrong</h3>
-      <p className="mt-1 text-sm text-muted-foreground max-w-sm">{message}</p>
-      {onRetry && (
-        <button
-          onClick={onRetry}
-          className="mt-4 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-        >
-          Retry
-        </button>
-      )}
-    </div>
+    <EmptyState
+      icon={AlertTriangle}
+      title="Something went wrong"
+      description={message}
+      action={
+        onRetry && (
+          <Button variant="secondary" onClick={onRetry}>
+            <RotateCw /> Try again
+          </Button>
+        )
+      }
+    />
   );
 }

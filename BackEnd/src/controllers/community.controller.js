@@ -1,123 +1,60 @@
+import { Community } from "../models/community.model.js";
+import { Like } from "../models/like.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { Community } from "../models/community.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import mongoose from "mongoose";
+import { aggregatePaginate, isSameId, lookupLikes, lookupPublicUser, toObjectId } from "../utils/helpers.js";
+
+const postPipeline = (match, viewerId) => [
+  { $match: match },
+  { $sort: { createdAt: -1, _id: -1 } },
+  ...lookupPublicUser(),
+  ...lookupLikes({ field: "community", viewerId }),
+];
+
+async function findOwnedPost(postId, user) {
+  const post = await Community.findById(postId);
+  if (!post) throw ApiError.notFound("Post not found");
+  if (!isSameId(post.owner, user)) throw ApiError.forbidden("You can only modify your own posts");
+  return post;
+}
 
 const createCommunityPost = asyncHandler(async (req, res) => {
-    const { content } = req.body;
-
-    if (!content) {
-        throw new ApiError(400, "write something to post")
-    }
-
-    const community = await Community.create(
-        {
-            content,
-            owner: req.user._id
-        }
-    )
-
-    if (!community) {
-        throw new ApiError(400, "error while creating community post")
-    }
-
-    await community.populate({ path: "owner", select: "username fullName avatar" });
-
-    return res.status(200).json(new ApiResponse(200, community, "community post created successfully"));
-})
+  const post = await Community.create({ content: req.body.content, owner: req.user._id });
+  await post.populate({ path: "owner", select: "username fullName avatar" });
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(201, { ...post.toObject(), likesCount: 0, isLiked: false }, "Community post created successfully")
+    );
+});
 
 const getAllCommunityPost = asyncHandler(async (req, res) => {
-
-    const communityPost = await Community.find({})
-        .populate({ path: "owner", select: "username fullName avatar" })
-        .sort({ createdAt: -1 });
-
-    if (!communityPost) {
-        throw new ApiError(400, "error while fetching posts")
-    }
-
-    return res.status(200).json(new ApiResponse(200, communityPost, "all post fetched"))
-})
+  const result = await aggregatePaginate(Community, postPipeline({}, req.user?._id), req.query);
+  return res.status(200).json(new ApiResponse(200, result, "Posts fetched"));
+});
 
 const getChannelPost = asyncHandler(async (req, res) => {
-    const { channelId } = req.params;
-
-    if (!channelId) {
-        throw new ApiError(400, "channel id is missing")
-    }
-
-    const post = await Community.find({ owner: channelId })
-        .populate({ path: "owner", select: "username fullName avatar" })
-        .sort({ createdAt: -1 });
-
-    if (!post) {
-        throw new ApiError(404, "post not found")
-    }
-
-    return res.status(200).json(new ApiResponse(200, post, "post fetched"));
-
-})
-
-const deletePost = asyncHandler(async (req, res) => {
-    const { postId } = req.params;
-    const userId = req.user?._id;
-
-    if (!postId) {
-        throw new ApiError(400, "post id is missing")
-    }
-
-    if (!mongoose.isValidObjectId(postId)) {
-        throw new ApiError(400, "post id is invalid")
-    }
-
-    if (!userId) {
-        throw new ApiError(401, "Unauthorized request")
-    }
-
-    const post = await Community.findById(postId).select("owner");
-    if (!post) {
-        throw new ApiError(404, "post not found")
-    }
-
-    if (!post.owner || post.owner.toString() !== userId.toString()) {
-        throw new ApiError(403, "You are not authorized to delete this post")
-    }
-
-    const deletedPost = await Community.findOneAndDelete({ _id: postId, owner: userId });
-    if (!deletedPost) {
-        throw new ApiError(400, "error while deleting post")
-    }
-
-    return res.status(200).json(new ApiResponse(200, deletedPost, "post deleted"))
-})
+  const result = await aggregatePaginate(
+    Community,
+    postPipeline({ owner: toObjectId(req.params.channelId) }, req.user?._id),
+    req.query
+  );
+  return res.status(200).json(new ApiResponse(200, result, "Channel posts fetched"));
+});
 
 const updatePost = asyncHandler(async (req, res) => {
-    const { postId } = req.params;
-    const { content } = req.body;
-    const userId = req.user?._id;
-    if (!postId) {
-        throw new ApiError(400, "post id is missing")
-    }
+  const post = await findOwnedPost(req.params.postId, req.user);
+  post.content = req.body.content;
+  await post.save();
+  await post.populate({ path: "owner", select: "username fullName avatar" });
+  return res.status(200).json(new ApiResponse(200, post, "Post updated successfully"));
+});
 
-    if (!content) {
-        throw new ApiError(400, "write something to update")
-    }
+const deletePost = asyncHandler(async (req, res) => {
+  const post = await findOwnedPost(req.params.postId, req.user);
+  await Promise.all([Community.deleteOne({ _id: post._id }), Like.deleteMany({ community: post._id })]);
+  return res.status(200).json(new ApiResponse(200, { _id: post._id }, "Post deleted"));
+});
 
-    const post = await Community.findById(postId);
-    if (!post) {
-        throw new ApiError(404, "post not found")
-    }
-
-    if (!userId || post.owner.toString() !== userId.toString()) {
-        throw new ApiError(403, "You are not authorized to update this post")
-    }
-
-    post.content = content;
-    await post.save();
-    await post.populate({ path: "owner", select: "username fullName avatar" });
-
-    return res.status(200).json(new ApiResponse(200, post, "post updated successfully"))
-})
-
-export { createCommunityPost, getAllCommunityPost, getChannelPost, deletePost, updatePost }
+export { createCommunityPost, getAllCommunityPost, getChannelPost, deletePost, updatePost };

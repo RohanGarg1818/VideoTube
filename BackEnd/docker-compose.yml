@@ -1,0 +1,27 @@
+# Local stack: MongoDB + API.  Usage:  docker compose up --build
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports: ["27017:27017"]
+    volumes: [mongo-data:/data/db]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      retries: 5
+
+  api:
+    build: .
+    restart: unless-stopped
+    ports: ["8000:8000"]
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: mongodb://mongo:27017
+      DB_NAME: videotube
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+volumes:
+  mongo-data:

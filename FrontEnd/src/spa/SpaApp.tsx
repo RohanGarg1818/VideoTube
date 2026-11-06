@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { lazy, Suspense, useEffect } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import { AppLayout } from "./layout/AppLayout";
 import { AuthLayout } from "./layout/AuthLayout";
 import { RequireAuth } from "./layout/RequireAuth";
+import { Aurora } from "./layout/Aurora";
+import { Logo } from "./components/Logo";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
 import { SignupPage } from "./pages/SignupPage";
@@ -19,7 +21,22 @@ import { CommunityPage } from "./pages/CommunityPage";
 import { ProfileSettingsPage } from "./pages/ProfileSettingsPage";
 import { ChangePasswordPage } from "./pages/ChangePasswordPage";
 import { MyPlaylistsPage } from "./pages/MyPlaylistsPage";
+import { NotFoundPage } from "./pages/NotFoundPage";
 import { useAuthStore } from "./store/authStore";
+
+// Recharts is heavy – only load the studio bundle when a creator opens it
+const StudioPage = lazy(() =>
+  import("./pages/StudioPage").then((m) => ({ default: m.StudioPage })),
+);
+
+function Splash() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6">
+      <Aurora />
+      <Logo className="scale-125 animate-pulse" />
+    </div>
+  );
+}
 
 function Bootstrap({ children }: { children: React.ReactNode }) {
   const fetchMe = useAuthStore((s) => s.fetchMe);
@@ -27,30 +44,21 @@ function Bootstrap({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetchMe();
   }, [fetchMe]);
-  if (!ready) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    );
-  }
-  return <>{children}</>;
+  return ready ? <>{children}</> : <Splash />;
 }
 
 export function SpaApp() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    );
-  }
-
   return (
     <BrowserRouter>
-      <Toaster theme="dark" position="bottom-right" richColors />
+      <Toaster
+        theme="dark"
+        position="bottom-right"
+        richColors
+        toastOptions={{
+          className:
+            "!rounded-2xl !border-white/10 !bg-[rgba(30,24,50,0.85)] !backdrop-blur-xl",
+        }}
+      />
       <Bootstrap>
         <Routes>
           <Route element={<AuthLayout />}>
@@ -59,21 +67,38 @@ export function SpaApp() {
           </Route>
           <Route element={<AppLayout />}>
             <Route path="/" element={<HomePage />} />
+            <Route
+              path="/explore"
+              element={<HomePage key="explore" defaultSort="views" />}
+            />
             <Route path="/watch/:videoId" element={<VideoPage />} />
             <Route path="/channel/:username" element={<ChannelPage />} />
             <Route path="/playlist/:playlistId" element={<PlaylistPage />} />
             <Route path="/community" element={<CommunityPage />} />
             <Route element={<RequireAuth />}>
               <Route path="/upload" element={<UploadPage />} />
+              <Route
+                path="/studio"
+                element={
+                  <Suspense
+                    fallback={<div className="skeleton h-96 rounded-3xl" />}
+                  >
+                    <StudioPage />
+                  </Suspense>
+                }
+              />
               <Route path="/liked" element={<LikedVideosPage />} />
               <Route path="/history" element={<HistoryPage />} />
               <Route path="/subscriptions" element={<SubscriptionsPage />} />
               <Route path="/playlists" element={<MyPlaylistsPage />} />
               <Route path="/settings" element={<ProfileSettingsPage />} />
+              <Route
+                path="/settings/password"
+                element={<ChangePasswordPage />}
+              />
               <Route path="/video/edit/:videoId" element={<EditVideoPage />} />
-              <Route path="/settings/password" element={<ChangePasswordPage />} />
             </Route>
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
       </Bootstrap>

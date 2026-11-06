@@ -119,3 +119,6 @@ dist
 
 .DS_Store
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Node
+# uploaded files are only staged here temporarily
+public/temp/*
+!public/temp/.gitkeep

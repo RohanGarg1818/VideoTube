@@ -1,354 +1,350 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import {
+  Bell,
+  BellRing,
+  Eye,
+  Calendar,
+  Heart,
+  Pencil,
+  Share2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ThumbsUp, UserPlus, UserCheck, PlusCircle } from "lucide-react";
-import { LikeAPI, PlaylistAPI, SubAPI, VideoAPI, type Playlist, type Video } from "../services/endpoints";
+import { LikeAPI, SubAPI, VideoAPI, type Video } from "../services/endpoints";
 import { useAsync } from "../hooks/useAsync";
 import { ErrorState } from "../components/EmptyState";
 import { CommentSection } from "../components/CommentSection";
-import { VideoCard } from "../components/VideoCard";
-import { formatViews, getOwner, timeAgo } from "../lib/format";
-import { apiErrorMessage } from "../services/api";
-import { toast } from "sonner";
+import { VideoRow } from "../components/VideoCard";
+import { UserAvatar } from "../components/UserAvatar";
+import { SaveToPlaylist } from "../components/SaveToPlaylist";
+import {
+  formatCount,
+  formatDate,
+  formatViews,
+  getOwner,
+  plural,
+  timeAgo,
+} from "../lib/format";
+import { apiErrorMessage, isNotFoundError } from "../services/api";
 import { useAuthStore } from "../store/authStore";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+type DetailedOwner = {
+  _id?: string;
+  username?: string;
+  fullName?: string;
+  avatar?: string;
+  subscribersCount?: number;
+  isSubscribed?: boolean;
+};
 
 export function VideoPage() {
   const { videoId } = useParams<{ videoId: string }>();
   const user = useAuthStore((s) => s.user);
-  const { data: video, loading, error, refetch, setData } = useAsync<Video | null>(
-    () => (videoId ? VideoAPI.get(videoId) : Promise.resolve(null)),
-    [videoId],
-  );
-  const [liked, setLiked] = useState(false);
-  const [subscribed, setSubscribed] = useState(false);
-  const [loadingLike, setLoadingLike] = useState(false);
-  const [playlistDialogOpen, setPlaylistDialogOpen] = useState(false);
-  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>("");
-  const [savingPlaylist, setSavingPlaylist] = useState(false);
-  const owner = video ? getOwner(video) : undefined;
-  const isOwner = owner?._id === user?._id;
-  const channelId = typeof video?.owner === "string" ? video.owner : owner?._id ?? "";
-
   const {
-    data: playlists,
-    loading: playlistsLoading,
-    error: playlistsError,
-    refetch: refetchPlaylists,
-  } = useAsync<Playlist[]>(
-    () => (user ? PlaylistAPI.byUser(user._id) : Promise.resolve([])),
-    [user?._id],
+    data: video,
+    loading,
+    error,
+    errorMessage,
+    refetch,
+    setData,
+  } = useAsync<Video | null>(
+    () => (videoId ? VideoAPI.get(videoId) : Promise.resolve(null)),
+    [videoId, user?._id],
   );
-  const { data: recentVideoPayload, loading: loadingRecentVideos } = useAsync(
-    () => VideoAPI.list({ sortBy: "createdAt", sortType: "desc", limit: 10 }),
+  const { data: related, loading: relatedLoading } = useAsync(
+    () => (videoId ? VideoAPI.related(videoId, 10) : Promise.resolve([])),
     [videoId],
   );
+  const [expanded, setExpanded] = useState(false);
+  const [busy, setBusy] = useState(false);
 
-  // Track view only for logged-in users
-  useEffect(() => {
-    if (!videoId || loading || !user) return;
-
-    const timer = setTimeout(() => {
-      VideoAPI.view(videoId)
-        .then((updatedVideo) => {
-          if (updatedVideo) {
-            setData(updatedVideo as Video | null);
-          }
-        })
-        .catch((err) => {
-          console.error("Failed to track view:", err);
-        });
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [videoId, loading, user, setData]);
-
+  // Register a view (unique per user server-side) once the page settles
   useEffect(() => {
     if (!videoId || !user) return;
+    const t = setTimeout(() => {
+      VideoAPI.view(videoId)
+        .then(
+          (v) =>
+            v && setData((prev) => (prev ? { ...prev, views: v.views } : prev)),
+        )
+        .catch(() => {});
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [videoId, user, setData]);
 
-    setLoadingLike(true);
-    LikeAPI.isVideoLiked(videoId)
-      .then((result) => {
-        setLiked(result.isLiked ?? false);
-      })
-      .catch(() => {})
-      .finally(() => setLoadingLike(false));
-  }, [videoId, user]);
+  useEffect(() => setExpanded(false), [videoId]);
 
-  useEffect(() => {
-    if (!user || !channelId) {
-      setSubscribed(false);
-      return;
-    }
-
-    SubAPI.subscribedTo(user._id)
-      .then((channels) => {
-        const isSubscribed = channels.some((entry) => entry.channel?._id === channelId);
-        setSubscribed(isSubscribed);
-      })
-      .catch(() => {
-        setSubscribed(false);
-      });
-  }, [user, channelId]);
-
-  const selectedPlaylist = playlists?.find((p) => p._id === selectedPlaylistId);
-  const alreadyInSelectedPlaylist = Boolean(
-    selectedPlaylist?.videos?.some((v) => (typeof v === "string" ? v : v._id) === video?._id),
-  );
-
-  const addToPlaylist = async () => {
-    if (!user) return toast.error("Sign in to add videos to playlist");
-    if (!selectedPlaylistId) return toast.error("Select a playlist");
-    if (!video) return;
-
-    if (alreadyInSelectedPlaylist) {
-      toast.success("Video already in selected playlist");
-      return;
-    }
-
-    setSavingPlaylist(true);
-    try {
-      await PlaylistAPI.addVideo(selectedPlaylistId, video._id);
-      toast.success("Video added to playlist");
-      setPlaylistDialogOpen(false);
-      setSelectedPlaylistId("");
-      refetchPlaylists();
-    } catch (e) {
-      toast.error(apiErrorMessage(e));
-    } finally {
-      setSavingPlaylist(false);
-    }
-  };
-
-  if (loading)
+  if (loading && !video) {
     return (
-      <div className="space-y-4">
-        <div className="aspect-video w-full animate-pulse rounded-xl bg-muted" />
-        <div className="h-6 w-2/3 animate-pulse rounded bg-muted" />
+      <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
+        <div className="space-y-4">
+          <div className="skeleton aspect-video w-full rounded-3xl" />
+          <div className="skeleton h-7 w-2/3 rounded-lg" />
+          <div className="skeleton h-16 w-full rounded-2xl" />
+        </div>
+        <div className="space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="skeleton h-24 rounded-2xl" />
+          ))}
+        </div>
       </div>
     );
-  if (error) return <ErrorState message={error instanceof Error ? error.message : "Something went wrong"} onRetry={refetch} />;
+  }
+  if (error) {
+    return (
+      <ErrorState
+        message={
+          isNotFoundError(error)
+            ? "This video doesn't exist or is private."
+            : (errorMessage ?? "")
+        }
+        onRetry={refetch}
+      />
+    );
+  }
   if (!video) return null;
 
-  const recentVideos = (Array.isArray(recentVideoPayload)
-    ? recentVideoPayload
-    : recentVideoPayload && typeof recentVideoPayload === "object" && "docs" in recentVideoPayload
-      ? recentVideoPayload.docs
-      : []
-  )
-    .filter((v) => v._id !== video._id)
-    .slice(0, 3);
+  const owner = getOwner(video) as DetailedOwner | null;
+  const isOwner = Boolean(owner?._id && owner._id === user?._id);
+  const liked = Boolean(video.isLiked);
+  const subscribed = Boolean(owner?.isSubscribed);
 
   const handleLike = async () => {
-    if (!user) return toast.error("Sign in to like");
+    if (!user) return toast.error("Sign in to like videos");
+    const prev = video;
+    setData({
+      ...video,
+      isLiked: !liked,
+      likes: Math.max(0, (video.likes ?? 0) + (liked ? -1 : 1)),
+    });
     try {
-      const result = await LikeAPI.toggleVideo(video._id);
-      setLiked(result.isVideoLiked??false);
-      setData((prev) => (prev ? { ...prev, likes: result.likes } : prev));
+      const res = await LikeAPI.toggleVideo(video._id);
+      setData((v) =>
+        v ? { ...v, isLiked: res.isVideoLiked, likes: res.likes } : v,
+      );
     } catch (e) {
+      setData(prev);
       toast.error(apiErrorMessage(e));
     }
   };
 
   const handleSub = async () => {
     if (!user) return toast.error("Sign in to subscribe");
-    if (!channelId) return;
+    if (!owner?._id) return;
+    setBusy(true);
     try {
-      const result = await SubAPI.toggle(channelId);
-      setSubscribed(Boolean(result?.data?.isSubscribed ?? result?.isSubscribed));
+      const res = await SubAPI.toggle(owner._id);
+      setData((v) =>
+        v && typeof v.owner === "object"
+          ? {
+              ...v,
+              owner: {
+                ...v.owner,
+                isSubscribed: res.isSubscribed,
+                subscribersCount: res.subscribersCount,
+              },
+            }
+          : v,
+      );
+      toast.success(
+        res.isSubscribed ? `Subscribed to ${owner.fullName}` : "Unsubscribed",
+      );
     } catch (e) {
       toast.error(apiErrorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const share = async () => {
+    const url = window.location.href;
+    try {
+      if (navigator.share) await navigator.share({ title: video.title, url });
+      else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied to clipboard");
+      }
+    } catch {
+      /* dismissed */
     }
   };
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="aspect-video w-full overflow-hidden rounded-xl bg-black">
-        {video.videoFile ? (
-          <video src={video.videoFile} controls poster={video.thumbnail} className="h-full w-full" />
-        ) : (
-          <div className="h-full w-full flex items-center justify-center text-muted-foreground">
-            Video unavailable
-          </div>
-        )}
-      </div>
-
-      <h1 className="text-xl font-semibold mt-4">{video.title}</h1>
-      <p className="text-sm text-muted-foreground mt-1">
-        {formatViews(video.views)} views · {Math.max(0, video.likes ?? 0)} likes · {timeAgo(video.createdAt)}
-      </p>
-
-      <div className="flex items-center justify-between gap-4 mt-4 border-b border-border pb-4 flex-wrap">
-        <div className="flex items-center gap-3 min-w-0">
-          {owner && (
-            <Link
-              to={`/channel/${owner.username}`}
-              className="flex items-center gap-3 min-w-0"
-            >
-              <Avatar className="h-12 w-12">
-                <AvatarImage
-                  src={owner.avatar || ""}
-                  alt={owner.fullName || owner.username}
-                />
-                <AvatarFallback>
-                  {(owner.fullName || owner.username || "U")
-                    .charAt(0)
-                    .toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-
-              <div className="min-w-0">
-                <div className="font-semibold truncate">
-                  {owner.fullName || owner.username}
-                </div>
-
-                <div className="text-xs text-muted-foreground truncate">
-                  @{owner.username}
-                </div>
-              </div>
-            </Link>
-          )}
-
-          <Button
-            onClick={handleSub}
-            variant={subscribed ? "secondary" : "default"}
-            size="sm"
-            className="ml-2"
-          >
-            {subscribed ? (
-              <UserCheck className="h-4 w-4 mr-2" />
-            ) : (
-              <UserPlus className="h-4 w-4 mr-2" />
-            )}
-            {subscribed ? "Subscribed" : "Subscribe"}
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {user && (
-            <Dialog
-              open={playlistDialogOpen}
-              onOpenChange={setPlaylistDialogOpen}
-            >
-              <DialogTrigger asChild>
-                <Button size="sm" variant="secondary">
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Add to playlist
-                </Button>
-              </DialogTrigger>
-
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add video to playlist</DialogTitle>
-                </DialogHeader>
-
-                <div className="space-y-4 py-2">
-                  {playlistsLoading ? (
-                    <p className="text-sm text-muted-foreground">
-                      Loading playlists…
-                    </p>
-                  ) : playlistsError ? (
-                    <p className="text-sm text-destructive">
-                      Unable to load playlists
-                    </p>
-                  ) : playlists?.length ? (
-                    <label className="space-y-2 text-sm">
-                      <span className="font-medium">
-                        Choose playlist
-                      </span>
-
-                      <select
-                        value={selectedPlaylistId}
-                        onChange={(e) =>
-                          setSelectedPlaylistId(e.target.value)
-                        }
-                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-                      >
-                        <option value="">
-                          Select a playlist
-                        </option>
-
-                        {playlists.map((playlist) => (
-                          <option
-                            key={playlist._id}
-                            value={playlist._id}
-                          >
-                            {playlist.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      No playlists found. Create one first.
-                    </p>
-                  )}
-                </div>
-
-                <DialogFooter>
-                  <Button
-                    type="button"
-                    disabled={
-                      savingPlaylist ||
-                      !selectedPlaylistId ||
-                      !playlists?.length
-                    }
-                    onClick={addToPlaylist}
-                  >
-                    {savingPlaylist
-                      ? "Adding…"
-                      : "Add to playlist"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          )}
-
-          <Button
-            onClick={handleLike}
-            variant={liked ? "default" : "secondary"}
-            size="sm"
-            disabled={loadingLike}
-          >
-            <ThumbsUp
-              className="h-4 w-4 mr-2"
-              fill={liked ? "currentColor" : "none"}
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="min-w-0 animate-fade-up">
+        <div className="relative">
+          {video.thumbnail && (
+            <img
+              src={video.thumbnail}
+              alt=""
+              aria-hidden
+              className="absolute inset-0 -z-10 h-full w-full scale-105 rounded-3xl object-cover opacity-40 blur-3xl"
             />
-            {liked ? "Liked" : "Like"}
-          </Button>
-          {isOwner && (
-            <Link to={`/video/edit/${video._id}`}>
-              <Button variant="outline" size="sm">
-                Edit Video
+          )}
+          <div className="aspect-video w-full overflow-hidden rounded-3xl bg-black shadow-2xl shadow-black/50 ring-1 ring-white/10">
+            {video.videoFile ? (
+              <video
+                key={video._id}
+                src={video.videoFile}
+                controls
+                autoPlay
+                playsInline
+                poster={video.thumbnail}
+                className="h-full w-full"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                Video unavailable
+              </div>
+            )}
+          </div>
+        </div>
+
+        <h1 className="mt-5 text-xl font-bold leading-snug tracking-tight md:text-2xl">
+          {video.title}
+        </h1>
+        {video.isPublished === false && (
+          <span className="mt-2 inline-block rounded-lg bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-200">
+            Draft — only you can see this video
+          </span>
+        )}
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
+          {owner && (
+            <div className="flex min-w-0 items-center gap-3">
+              <Link
+                to={`/channel/${owner.username}`}
+                className="flex min-w-0 items-center gap-3"
+              >
+                <UserAvatar
+                  src={owner.avatar}
+                  name={owner.fullName}
+                  className="h-11 w-11"
+                  ring
+                />
+                <div className="min-w-0">
+                  <div className="truncate font-semibold">{owner.fullName}</div>
+                  <div className="truncate text-xs text-muted-foreground">
+                    {plural(owner.subscribersCount, "subscriber")}
+                  </div>
+                </div>
+              </Link>
+              {!isOwner && (
+                <Button
+                  onClick={handleSub}
+                  disabled={busy}
+                  variant={subscribed ? "secondary" : "default"}
+                  size="sm"
+                  className="ml-2 rounded-full px-4"
+                >
+                  {subscribed ? <BellRing /> : <Bell />}
+                  {subscribed ? "Subscribed" : "Subscribe"}
+                </Button>
+              )}
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              onClick={handleLike}
+              variant="secondary"
+              size="sm"
+              className={cn(
+                "rounded-full",
+                liked &&
+                  "border-pink-400/40 bg-pink-500/15 text-pink-200 hover:bg-pink-500/25",
+              )}
+            >
+              <Heart className={cn(liked && "fill-current")} />{" "}
+              {formatCount(video.likes)}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="rounded-full"
+              onClick={share}
+            >
+              <Share2 /> Share
+            </Button>
+            <SaveToPlaylist videoId={video._id} />
+            {isOwner && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full"
+                asChild
+              >
+                <Link to={`/video/edit/${video._id}`}>
+                  <Pencil /> Edit
+                </Link>
               </Button>
-            </Link>
+            )}
+          </div>
+        </div>
+
+        <div className="glass mt-5 rounded-2xl p-4">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium">
+            <span className="flex items-center gap-1.5">
+              <Eye className="h-4 w-4 text-fuchsia-300" />{" "}
+              {formatViews(video.views)} views
+            </span>
+            <span
+              className="flex items-center gap-1.5"
+              title={formatDate(video.createdAt)}
+            >
+              <Calendar className="h-4 w-4 text-fuchsia-300" />{" "}
+              {timeAgo(video.createdAt)}
+            </span>
+          </div>
+          {video.description ? (
+            <>
+              <p
+                className={cn(
+                  "mt-3 whitespace-pre-wrap text-sm leading-relaxed text-foreground/85",
+                  !expanded && "line-clamp-3",
+                )}
+              >
+                {video.description}
+              </p>
+              {video.description.length > 180 && (
+                <button
+                  onClick={() => setExpanded((v) => !v)}
+                  className="mt-2 text-sm font-semibold text-fuchsia-300 hover:underline"
+                >
+                  {expanded ? "Show less" : "Show more"}
+                </button>
+              )}
+            </>
+          ) : (
+            <p className="mt-3 text-sm italic text-muted-foreground">
+              No description provided.
+            </p>
           )}
         </div>
+
+        <CommentSection videoId={video._id} />
       </div>
 
-      {video.description && (
-        <div className="mt-4 rounded-lg bg-muted/50 p-4 text-sm whitespace-pre-wrap">
-          {video.description}
+      <aside className="min-w-0">
+        <h2 className="mb-3 px-1 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          Up next
+        </h2>
+        <div className="space-y-2">
+          {relatedLoading ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="skeleton h-24 rounded-2xl" />
+            ))
+          ) : related?.length ? (
+            related.map((v) => <VideoRow key={v._id} video={v} />)
+          ) : (
+            <p className="px-1 text-sm text-muted-foreground">
+              No other videos yet.
+            </p>
+          )}
         </div>
-      )}
-
-      <div className="mt-6 border-t border-border pt-6">
-        <h2 className="text-lg font-semibold mb-4">More videos</h2>
-        {loadingRecentVideos ? (
-          <p className="text-sm text-muted-foreground">Loading suggestions...</p>
-        ) : recentVideos.length ? (
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-            {recentVideos.map((recentVideo) => (
-              <VideoCard key={recentVideo._id} video={recentVideo} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">No recent videos to suggest right now.</p>
-        )}
-      </div>
-
-      {channelId && <CommentSection videoId={video._id} channelId={channelId} />}
+      </aside>
     </div>
   );
 }

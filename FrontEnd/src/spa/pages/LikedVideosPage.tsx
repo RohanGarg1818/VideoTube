@@ -1,26 +1,58 @@
+import { Heart } from "lucide-react";
 import { LikeAPI } from "../services/endpoints";
-import { useAsync } from "../hooks/useAsync";
+import { usePaginated } from "../hooks/useAsync";
 import { EmptyState, ErrorState } from "../components/EmptyState";
-import { VideoCard, VideoCardSkeleton } from "../components/VideoCard";
-import { ThumbsUp } from "lucide-react";
+import { PageHeader } from "../components/PageHeader";
+import {
+  VideoCard,
+  VideoGrid,
+  VideoGridSkeleton,
+} from "../components/VideoCard";
+import { LoadMore } from "../components/LoadMore";
+import { plural } from "../lib/format";
 
 export function LikedVideosPage() {
-  const { data, loading, error, refetch } = useAsync(() => LikeAPI.likedVideos(), []);
+  const {
+    items,
+    total,
+    hasMore,
+    loading,
+    loadingMore,
+    errorMessage,
+    loadMore,
+    reload,
+  } = usePaginated((page) => LikeAPI.likedVideos({ page, limit: 16 }), []);
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Liked videos</h1>
-      {loading && (
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => <VideoCardSkeleton key={i} />)}
-        </div>
+      <PageHeader
+        icon={Heart}
+        title="Liked videos"
+        subtitle={loading ? "Loading…" : plural(total, "video")}
+      />
+      {loading ? (
+        <VideoGridSkeleton count={4} />
+      ) : errorMessage ? (
+        <ErrorState message={errorMessage} onRetry={reload} />
+      ) : !items.length ? (
+        <EmptyState
+          icon={Heart}
+          title="No liked videos"
+          description="Tap the heart on any video to save it here."
+        />
+      ) : (
+        <>
+          <VideoGrid>
+            {items.map((v, i) => (
+              <VideoCard key={v._id} video={v} index={i % 16} />
+            ))}
+          </VideoGrid>
+          <LoadMore
+            hasMore={hasMore}
+            loading={loadingMore}
+            onLoadMore={loadMore}
+          />
+        </>
       )}
-      {error && <ErrorState message={errorMessage || "Something went wrong"} onRetry={refetch} />}
-      {!loading && !error && !data?.length && (
-        <EmptyState icon={ThumbsUp} title="No liked videos" description="Videos you like will show up here." />
-      )}
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {data?.map((v) => <VideoCard key={v._id} video={v} />)}
-      </div>
     </div>
   );
 }

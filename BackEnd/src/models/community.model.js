@@ -1,19 +1,14 @@
-import mongoose, {Schema} from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
-const communitySchema = Schema(
-    {
-        content:{
-            type:String,
-            required:true
-        },
-        owner:{
-            type: Schema.Types.ObjectId,
-            ref:"User"
-        }
-    },
-    {
-        timestamps:true
-    }
-)
+const communitySchema = new Schema(
+  {
+    content: { type: String, required: true, trim: true, maxlength: 2000 },
+    owner: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  },
+  { timestamps: true }
+);
 
-export const Community = mongoose.model("Community",communitySchema)
+communitySchema.index({ owner: 1, createdAt: -1 });
+communitySchema.index({ createdAt: -1 });
+
+export const Community = mongoose.model("Community", communitySchema);

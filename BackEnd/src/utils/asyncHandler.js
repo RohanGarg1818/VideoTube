@@ -1,19 +1,8 @@
-const asyncHandler=(requestHandler)=>{
-    return (req,res,next)=>{
-        Promise.resolve(requestHandler(req,res,next)).
-        catch((err)=>next(err))
-    }
-}
- 
-export default asyncHandler
+/**
+ * Wraps an async route handler so rejected promises reach the error middleware.
+ * (Express 5 does this natively, but the wrapper keeps controllers explicit and portable.)
+ */
+const asyncHandler = (requestHandler) => (req, res, next) =>
+  Promise.resolve(requestHandler(req, res, next)).catch(next);
 
-// const asyncHandler=(fn)=>async()=>{
-//     try{
-//         await fn(req,resizeBy,next)
-//     } catch(error){
-//         resizeBy.status(error.code||500).json({
-//             success:false,
-//             message:err.message
-//         })
-//     }
-// }
+export default asyncHandler;

@@ -1,159 +1,124 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Users, Film } from "lucide-react";
 import { SubAPI } from "../services/endpoints";
-import { useAsync } from "../hooks/useAsync";
+import { useAsync, usePaginated } from "../hooks/useAsync";
 import { EmptyState, ErrorState } from "../components/EmptyState";
+import { PageHeader } from "../components/PageHeader";
+import {
+  VideoCard,
+  VideoGrid,
+  VideoGridSkeleton,
+} from "../components/VideoCard";
+import { LoadMore } from "../components/LoadMore";
+import { UserAvatar } from "../components/UserAvatar";
 import { useAuthStore } from "../store/authStore";
-import { Users } from "lucide-react";
-import { toast } from "sonner";
-import { apiErrorMessage } from "../services/api";
+import { plural } from "../lib/format";
+import { Button } from "@/components/ui/button";
 
 export function SubscriptionsPage() {
-  const me = useAuthStore((s) => s.user);
-  const [unsubscribing, setUnsubscribing] = useState<string | null>(null);
-
-  const {
-    data,
-    loading,
-    error,
-    refetch,
-  } = useAsync(
-    () => (me ? SubAPI.subscribedTo(me._id) : Promise.resolve([])),
-    [me?._id]
+  const me = useAuthStore((s) => s.user)!;
+  const channels = useAsync(() => SubAPI.subscribedTo(me._id), [me._id]);
+  const feed = usePaginated(
+    (page) => SubAPI.feed({ page, limit: 12 }),
+    [me._id],
   );
 
-  const handleUnsubscribe = async (
-    e: React.MouseEvent,
-    channelId: string
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    try {
-      setUnsubscribing(channelId);
-
-      await SubAPI.toggle(channelId);
-
-      toast.success("Unsubscribed successfully");
-
-      refetch();
-    } catch (err) {
-      toast.error(apiErrorMessage(err));
-    } finally {
-      setUnsubscribing(null);
-    }
-  };
-
-  if (!me) {
-    return (
-      <ErrorState
-        message="Please log in to view subscriptions"
-        onRetry={() => (window.location.href = "/")}
-      />
-    );
-  }
-
-  if (error) {
-    return (
-      <ErrorState
-        message="Something went wrong"
-        onRetry={refetch}
-      />
-    );
-  }
+  const list = channels.data ?? [];
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">
-        Your subscriptions
-      </h1>
+      <PageHeader
+        icon={Users}
+        title="Subscriptions"
+        subtitle={
+          channels.loading
+            ? "Loading…"
+            : `You follow ${plural(list.length, "channel")}`
+        }
+      />
 
-      {loading && (
-        <p className="text-sm text-muted-foreground">
-          Loading...
-        </p>
-      )}
-
-      {!loading && !data?.length && (
-        <EmptyState
-          icon={Users}
-          title="No subscriptions yet"
-          description="Subscribe to channels to see them here."
+      {channels.errorMessage && (
+        <ErrorState
+          message={channels.errorMessage}
+          onRetry={channels.refetch}
         />
       )}
 
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        {data?.map((item) => {
-          const channel = Array.isArray(item.channel)
-            ? item.channel[0]
-            : item.channel;
-
-          if (!channel) return null;
-
-          return (
-            <Link
-              key={channel._id}
-              to={`/channel/${channel.username}`}
-              className="group rounded-lg border border-border overflow-hidden hover:border-primary transition-colors"
-            >
-              {/* Cover Image */}
-              <div className="aspect-[6/1] w-full overflow-hidden bg-muted">
-                {channel.coverImage ? (
-                  <img
-                    src={channel.coverImage}
-                    alt=""
-                    className="h-full w-full object-cover group-hover:opacity-80 transition-opacity"
+      {!channels.loading && !channels.errorMessage && !list.length ? (
+        <EmptyState
+          icon={Users}
+          title="No subscriptions yet"
+          description="Subscribe to creators to see their newest uploads here."
+          action={
+            <Button asChild>
+              <Link to="/explore">Discover channels</Link>
+            </Button>
+          }
+        />
+      ) : (
+        <>
+          <div className="-mx-1 mb-10 flex gap-3 overflow-x-auto px-1 pb-2">
+            {channels.loading
+              ? Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="skeleton h-36 w-32 shrink-0 rounded-3xl"
                   />
-                ) : (
-                  <div className="h-full w-full bg-gradient-to-r from-muted to-muted-foreground" />
+                ))
+              : list.map(({ channel }) =>
+                  channel ? (
+                    <Link
+                      key={channel._id}
+                      to={`/channel/${channel.username}`}
+                      className="glass glass-hover flex w-36 shrink-0 animate-fade-up flex-col items-center rounded-3xl p-4 text-center"
+                    >
+                      <UserAvatar
+                        src={channel.avatar}
+                        name={channel.fullName}
+                        className="h-16 w-16"
+                        ring
+                      />
+                      <p className="mt-3 w-full truncate text-sm font-semibold">
+                        {channel.fullName}
+                      </p>
+                      <p className="w-full truncate text-[11px] text-muted-foreground">
+                        {plural(channel.subscribersCount, "subscriber")}
+                      </p>
+                    </Link>
+                  ) : null,
                 )}
-              </div>
+          </div>
 
-              {/* Content */}
-              <div className="p-4">
-                <div className="flex gap-3 items-start">
-                  <Avatar className="h-12 w-12 -mt-8 border-2 border-background">
-                    <AvatarImage src={channel.avatar} />
-                    <AvatarFallback>
-                      {channel.fullName?.[0]?.toUpperCase() ?? "U"}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate">
-                      {channel.fullName}
-                    </h3>
-
-                    <p className="text-sm text-muted-foreground truncate">
-                      @{channel.username}
-                    </p>
-
-                    {/* Replace with actual field from backend if available */}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Subscribers
-                    </p>
-                  </div>
-
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    disabled={unsubscribing === channel._id}
-                    onClick={(e) =>
-                      handleUnsubscribe(e, channel._id)
-                    }
-                  >
-                    {unsubscribing === channel._id
-                      ? "Removing..."
-                      : "Unsubscribe"}
-                  </Button>
-                </div>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
+            <Film className="h-5 w-5 text-fuchsia-300" /> Latest from your
+            channels
+          </h2>
+          {feed.loading ? (
+            <VideoGridSkeleton count={4} />
+          ) : feed.errorMessage ? (
+            <ErrorState message={feed.errorMessage} onRetry={feed.reload} />
+          ) : !feed.items.length ? (
+            <EmptyState
+              icon={Film}
+              title="Nothing new yet"
+              description="Your channels haven't uploaded anything yet."
+            />
+          ) : (
+            <>
+              <VideoGrid>
+                {feed.items.map((v, i) => (
+                  <VideoCard key={v._id} video={v} index={i % 12} />
+                ))}
+              </VideoGrid>
+              <LoadMore
+                hasMore={feed.hasMore}
+                loading={feed.loadingMore}
+                onLoadMore={feed.loadMore}
+              />
+            </>
+          )}
+        </>
+      )}
     </div>
   );
 }

@@ -1,19 +1,31 @@
 import { useState, type FormEvent } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Link } from "react-router-dom";
+import { MessageSquare, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil, Trash2 } from "lucide-react";
-import { CommunityAPI, type CommunityPost } from "../services/endpoints";
-import { useAsync } from "../hooks/useAsync";
+import { CommunityAPI } from "../services/endpoints";
+import { usePaginated } from "../hooks/useAsync";
 import { EmptyState, ErrorState } from "../components/EmptyState";
+import { PageHeader } from "../components/PageHeader";
+import { PostCard } from "../components/PostCard";
+import { LoadMore } from "../components/LoadMore";
+import { UserAvatar } from "../components/UserAvatar";
 import { useAuthStore } from "../store/authStore";
 import { apiErrorMessage } from "../services/api";
-import { getOwner, timeAgo } from "../lib/format";
 import { toast } from "sonner";
 
 export function CommunityPage() {
   const me = useAuthStore((s) => s.user);
-  const { data, loading, error, errorMessage, refetch } = useAsync(() => CommunityAPI.feed(), []);
+  const {
+    items,
+    setItems,
+    hasMore,
+    loading,
+    loadingMore,
+    errorMessage,
+    loadMore,
+    reload,
+  } = usePaginated((page) => CommunityAPI.feed({ page, limit: 10 }), [me?._id]);
   const [content, setContent] = useState("");
   const [posting, setPosting] = useState(false);
 
@@ -22,120 +34,102 @@ export function CommunityPage() {
     if (!content.trim()) return;
     setPosting(true);
     try {
-      await CommunityAPI.create(content.trim());
+      const post = await CommunityAPI.create(content.trim());
+      setItems((prev) => [post, ...prev]);
       setContent("");
       toast.success("Posted");
-      refetch();
-    } catch (e) {
-      toast.error(apiErrorMessage(e));
+    } catch (err) {
+      toast.error(apiErrorMessage(err));
     } finally {
       setPosting(false);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Community</h1>
-      {me && (
-        <form onSubmit={create} className="flex gap-3 mb-6">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src={me.avatar} />
-            <AvatarFallback>{me.fullName?.[0]?.toUpperCase() ?? "U"}</AvatarFallback>
-          </Avatar>
-          <div className="flex-1 space-y-2">
+    <div className="mx-auto max-w-2xl">
+      <PageHeader
+        icon={MessageSquare}
+        title="Community"
+        subtitle="Updates, thoughts and announcements from creators"
+      />
+
+      {me ? (
+        <form onSubmit={create} className="glass mb-6 rounded-3xl p-5">
+          <div className="flex gap-3">
+            <UserAvatar
+              src={me.avatar}
+              name={me.fullName}
+              className="h-10 w-10"
+            />
             <Textarea
-              placeholder="Share something…"
+              placeholder={`What's on your mind, ${me.fullName.split(" ")[0]}?`}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={3}
+              maxLength={2000}
+              className="border-0 bg-transparent px-0 text-base shadow-none hover:border-0 focus-visible:bg-transparent focus-visible:ring-0"
             />
-            <div className="flex justify-end">
-              <Button type="submit" disabled={posting || !content.trim()}>Post</Button>
-            </div>
+          </div>
+          <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3">
+            <span className="text-xs text-muted-foreground">
+              {content.length}/2000
+            </span>
+            <Button
+              type="submit"
+              size="sm"
+              className="rounded-full px-5"
+              disabled={posting || !content.trim()}
+            >
+              <Send /> {posting ? "Posting…" : "Post"}
+            </Button>
           </div>
         </form>
-      )}
-      {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
-      {error && <ErrorState message={errorMessage || "Something went wrong"} onRetry={refetch} />}
-      {!loading && !error && !data?.length && <EmptyState title="No posts yet" />}
-      <div className="space-y-4">
-        {data?.map((p) => (
-          <PostItem key={p._id} post={p} currentUserId={me?._id} onChanged={refetch} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function PostItem({
-  post,
-  currentUserId,
-  onChanged,
-}: {
-  post: CommunityPost;
-  currentUserId?: string;
-  onChanged: () => void;
-}) {
-  const owner = getOwner(post);
-  const ownerIdToCompare = (post.owner && typeof post.owner === "object" && "_id" in post.owner)
-    ? post.owner._id
-    : (typeof post.owner === "string" ? post.owner : undefined);
-
-  const isMine = ownerIdToCompare && currentUserId && ownerIdToCompare === currentUserId;
-  const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(post.content);
-
-  const save = async () => {
-    try {
-      await CommunityAPI.update(post._id, value);
-      setEditing(false);
-      onChanged();
-    } catch (e) {
-      toast.error(apiErrorMessage(e));
-    }
-  };
-
-  const remove = async () => {
-    if (!confirm("Delete this post?")) return;
-    try {
-      await CommunityAPI.remove(post._id);
-      onChanged();
-    } catch (e) {
-      toast.error(apiErrorMessage(e));
-    }
-  };
-
-  return (
-    <div className="rounded-lg border border-border p-4">
-      <div className="flex items-center gap-2">
-        <Avatar className="h-8 w-8">
-          <AvatarImage src={owner?.avatar} />
-          <AvatarFallback>{owner?.fullName?.[0]?.toUpperCase() ?? "U"}</AvatarFallback>
-        </Avatar>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">{owner?.fullName ?? "Unknown"}</p>
-          <p className="text-xs text-muted-foreground">{timeAgo(post.createdAt)}</p>
-        </div>
-      </div>
-      {editing ? (
-        <div className="mt-3 space-y-2">
-          <Textarea value={value} onChange={(e) => setValue(e.target.value)} rows={3} />
-          <div className="flex gap-2 justify-end">
-            <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>Cancel</Button>
-            <Button size="sm" onClick={save}>Save</Button>
-          </div>
-        </div>
       ) : (
-        <p className="mt-3 whitespace-pre-wrap break-words">{post.content}</p>
+        <div className="glass mb-6 rounded-3xl p-5 text-sm text-muted-foreground">
+          <Link
+            to="/login"
+            className="font-semibold text-fuchsia-300 hover:underline"
+          >
+            Sign in
+          </Link>{" "}
+          to share a post with the community.
+        </div>
       )}
-      {isMine && !editing && (
-        <div className="flex gap-2 mt-2">
-          <Button variant="ghost" size="sm" onClick={() => setEditing(true)} className="h-7 px-2">
-            <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
-          </Button>
-          <Button variant="ghost" size="sm" onClick={remove} className="h-7 px-2 text-destructive">
-            <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
-          </Button>
+
+      {loading ? (
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="skeleton h-36 rounded-3xl" />
+          ))}
+        </div>
+      ) : errorMessage ? (
+        <ErrorState message={errorMessage} onRetry={reload} />
+      ) : !items.length ? (
+        <EmptyState
+          icon={MessageSquare}
+          title="No posts yet"
+          description="Start the conversation!"
+        />
+      ) : (
+        <div className="space-y-4">
+          {items.map((p) => (
+            <PostCard
+              key={p._id}
+              post={p}
+              currentUserId={me?._id}
+              onUpdated={(u) =>
+                setItems((prev) => prev.map((x) => (x._id === u._id ? u : x)))
+              }
+              onDeleted={(id) =>
+                setItems((prev) => prev.filter((x) => x._id !== id))
+              }
+            />
+          ))}
+          <LoadMore
+            hasMore={hasMore}
+            loading={loadingMore}
+            onLoadMore={loadMore}
+          />
         </div>
       )}
     </div>
