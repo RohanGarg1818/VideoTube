@@ -98,6 +98,7 @@ export function MyPlaylistsPage() {
     <div>
       <PageHeader
         icon={ListVideo}
+        eyebrow="Library"
         title="Your playlists"
         subtitle={data ? plural(data.length, "playlist") : undefined}
         actions={createButton}

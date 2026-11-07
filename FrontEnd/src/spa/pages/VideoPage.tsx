@@ -184,7 +184,7 @@ export function VideoPage() {
           )}
         </div>
 
-        <h1 className="mt-4 text-xl font-semibold leading-snug tracking-[-0.01em]">
+        <h1 className="mt-5 text-[22px] font-semibold leading-snug tracking-[-0.02em]">
           {video.title}
         </h1>
 
@@ -227,7 +227,10 @@ export function VideoPage() {
             <Button
               onClick={handleLike}
               variant="secondary"
-              className="rounded-full"
+              className={cn(
+                "rounded-full",
+                liked && "bg-brand-soft text-brand hover:bg-brand-soft",
+              )}
               aria-pressed={liked}
             >
               <ThumbsUp className={cn(liked && "fill-current")} />{" "}
@@ -251,10 +254,11 @@ export function VideoPage() {
           </div>
         </div>
 
-        <div className="mt-4 rounded-xl bg-white/[0.05] p-3.5 text-sm">
-          <p className="font-medium">
+        <div className="mt-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-4 text-sm">
+          <p className="eyebrow text-[11px] text-foreground/80">
             {formatViews(video.views)} views{" "}
-            <span className="ml-2" title={formatDate(video.createdAt)}>
+            <span className="mx-1.5 text-brand">/</span>
+            <span title={formatDate(video.createdAt)}>
               {timeAgo(video.createdAt)}
             </span>
             {video.isPublished === false && (
@@ -291,6 +295,9 @@ export function VideoPage() {
       </div>
 
       <aside className="min-w-0">
+        <p className="eyebrow mb-4 flex items-center gap-2 px-1">
+          <span className="rec-dot" /> Up next
+        </p>
         <div className="space-y-2">
           {relatedLoading ? (
             Array.from({ length: 6 }).map((_, i) => (

@@ -29,6 +29,7 @@ export function HistoryPage() {
     <div className="mx-auto max-w-4xl">
       <PageHeader
         icon={History}
+        eyebrow="Library"
         title="Watch history"
         subtitle="Your 50 most recently watched videos"
         actions={

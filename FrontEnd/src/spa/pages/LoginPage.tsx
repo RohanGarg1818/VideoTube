@@ -47,9 +47,11 @@ export function LoginPage() {
 
   return (
     <div className="w-full max-w-[380px]">
-      <h1 className="text-2xl font-semibold tracking-[-0.02em]">Sign in</h1>
+      <h1 className="display text-[52px]">
+        Welcome <span className="italic text-brand">back.</span>
+      </h1>
       <p className="mt-1.5 text-sm text-muted-foreground">
-        Welcome back. Enter your details to continue.
+        Sign in to pick up where you left off.
       </p>
 
       <form onSubmit={handle} className="mt-8 space-y-5">
@@ -99,7 +101,7 @@ export function LoginPage() {
           </p>
         )}
 
-        <Button type="submit" className="w-full" disabled={loading}>
+        <Button type="submit" className="w-full" size="lg" disabled={loading}>
           {loading && <Loader2 className="animate-spin" />}
           {loading ? "Signing in…" : "Sign in"}
         </Button>

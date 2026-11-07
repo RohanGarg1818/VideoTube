@@ -38,6 +38,7 @@ export function ChangePasswordPage() {
     <div className="mx-auto max-w-lg">
       <PageHeader
         icon={KeyRound}
+        eyebrow="Account · Security"
         title="Change password"
         subtitle="Changing your password signs you out everywhere else."
       />

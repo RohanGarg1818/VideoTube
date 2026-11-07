@@ -59,7 +59,7 @@ export function CommentSection({ videoId }: { videoId: string }) {
 
   return (
     <section className="mt-8">
-      <h2 className="mb-6 text-lg font-semibold tracking-tight">
+      <h2 className="display mb-6 text-[30px]">
         {formatCount(total)} {total === 1 ? "Comment" : "Comments"}
       </h2>
 

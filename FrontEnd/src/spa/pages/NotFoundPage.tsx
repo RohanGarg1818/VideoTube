@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 export function NotFoundPage() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-      <p className="text-sm font-medium text-muted-foreground">404</p>
+      <p className="display text-[140px] italic leading-none text-brand">404</p>
       <h1 className="mt-2 text-2xl font-semibold tracking-tight">
         This page drifted off into space
       </h1>

@@ -61,10 +61,10 @@ export function Sidebar({
         title={it.label}
         className={({ isActive }) =>
           cn(
-            "flex items-center gap-4 rounded-lg px-3 py-2 text-sm transition-colors",
+            "relative flex items-center gap-4 rounded-lg px-3 py-2 text-sm transition-colors",
             isActive
-              ? "bg-white/[0.08] font-medium text-foreground"
-              : "text-muted-foreground hover:bg-white/[0.05] hover:text-foreground",
+              ? "bg-white/[0.06] font-medium text-foreground before:absolute before:-left-3 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-brand [&>svg]:text-brand"
+              : "text-muted-foreground hover:bg-white/[0.04] hover:text-foreground",
             !open && "lg:flex-col lg:gap-1.5 lg:px-0 lg:py-3.5 lg:text-[10px]",
           )
         }
@@ -106,7 +106,7 @@ export function Sidebar({
               )}
             >
               {section.title && open && (
-                <p className="px-3 pb-1.5 pt-1 text-xs font-medium text-muted-foreground/80">
+                <p className="eyebrow px-3 pb-2.5 pt-2 text-[10px]">
                   {section.title}
                 </p>
               )}

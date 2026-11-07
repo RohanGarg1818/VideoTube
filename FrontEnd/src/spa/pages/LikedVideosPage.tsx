@@ -26,6 +26,7 @@ export function LikedVideosPage() {
     <div>
       <PageHeader
         icon={Heart}
+        eyebrow="Library"
         title="Liked videos"
         subtitle={loading ? "Loading…" : plural(total, "video")}
       />

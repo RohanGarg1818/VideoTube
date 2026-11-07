@@ -61,6 +61,7 @@ export function ProfileSettingsPage() {
     <div className="mx-auto max-w-3xl">
       <PageHeader
         icon={Settings}
+        eyebrow="Account"
         title="Settings"
         subtitle="Manage how your channel looks"
         actions={

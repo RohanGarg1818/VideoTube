@@ -78,9 +78,7 @@ export function PlaylistPage() {
               <ListVideo className="m-auto h-full w-10 text-white/40" />
             )}
           </div>
-          <h1 className="mt-5 text-xl font-semibold tracking-tight">
-            {data.name}
-          </h1>
+          <h1 className="display mt-6 text-[40px]">{data.name}</h1>
           {owner && (
             <Link
               to={`/channel/${owner.username}`}

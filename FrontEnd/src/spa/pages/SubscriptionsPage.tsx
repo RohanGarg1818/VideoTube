@@ -29,6 +29,7 @@ export function SubscriptionsPage() {
     <div>
       <PageHeader
         icon={Users}
+        eyebrow="Following"
         title="Subscriptions"
         subtitle={
           channels.loading

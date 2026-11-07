@@ -72,7 +72,7 @@ export function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search"
         aria-label="Search videos"
-        className="h-9 w-full rounded-lg border border-white/10 bg-white/[0.03] pl-9 pr-10 text-sm outline-none transition-colors placeholder:text-muted-foreground/80 hover:border-white/15 focus:border-white/30"
+        className="h-9 w-full rounded-full border border-white/10 bg-white/[0.03] pl-9 pr-10 text-sm outline-none transition-colors placeholder:text-muted-foreground/80 hover:border-white/15 focus:border-brand/70"
       />
       <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-white/10 px-1.5 font-mono text-[10px] text-muted-foreground md:block">
         /
@@ -125,7 +125,6 @@ export function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
             {user ? (
               <>
                 <Button
-                  variant="secondary"
                   size="sm"
                   className="hidden sm:inline-flex"
                   onClick={() => navigate("/upload")}

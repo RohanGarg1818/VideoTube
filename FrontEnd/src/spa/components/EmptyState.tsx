@@ -14,17 +14,15 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
-      <div className="mb-4 grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-white/[0.03]">
-        <Icon className="h-5 w-5 text-muted-foreground" strokeWidth={1.75} />
-      </div>
-      <h3 className="text-[15px] font-medium">{title}</h3>
+    <div className="relative flex animate-rise flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-[var(--color-border)] px-6 py-20 text-center">
+      <Icon className="mb-5 h-6 w-6 text-brand" strokeWidth={1.5} />
+      <h3 className="display text-[32px]">{title}</h3>
       {description && (
-        <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+        <p className="mt-2 max-w-sm text-sm text-muted-foreground">
           {description}
         </p>
       )}
-      {action && <div className="mt-5">{action}</div>}
+      {action && <div className="mt-6">{action}</div>}
     </div>
   );
 }
@@ -39,7 +37,7 @@ export function ErrorState({
   return (
     <EmptyState
       icon={AlertCircle}
-      title="Couldn't load this"
+      title="Signal lost"
       description={message}
       action={
         onRetry && (

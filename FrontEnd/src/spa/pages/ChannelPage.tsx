@@ -91,68 +91,81 @@ export function ChannelPage() {
 
   return (
     <div>
-      {channel.coverImage && (
-        <div className="aspect-[6/1] w-full overflow-hidden rounded-xl bg-zinc-800">
+      <div className="relative aspect-[5/1] min-h-[140px] w-full overflow-hidden rounded-2xl bg-[var(--color-card)]">
+        {channel.coverImage ? (
           <img
             src={channel.coverImage}
             alt=""
             className="h-full w-full object-cover"
           />
-        </div>
-      )}
+        ) : (
+          <div className="flex h-full items-end p-6">
+            <span className="display text-[72px] italic leading-none text-white/[0.06]">
+              @{channel.username}
+            </span>
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-background)] via-transparent to-transparent" />
+      </div>
 
-      <div className="mt-6 flex flex-wrap items-center gap-5">
+      <div className="relative -mt-12 flex flex-wrap items-end gap-6 px-1 md:-mt-16 md:px-4">
         <UserAvatar
           src={channel.avatar}
           name={channel.fullName}
-          className="h-20 w-20 text-2xl md:h-28 md:w-28"
+          className="h-24 w-24 border-4 border-[var(--color-background)] text-2xl md:h-32 md:w-32"
         />
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate text-2xl font-semibold tracking-[-0.02em] md:text-[32px] md:leading-tight">
+        <div className="min-w-0 flex-1 pb-1">
+          <p className="eyebrow mb-2">
+            @{channel.username}
+            {channel.createdAt && <> · Since {formatDate(channel.createdAt)}</>}
+          </p>
+          <h1 className="display truncate text-[48px] md:text-[68px]">
             {channel.fullName}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            <span className="font-medium text-foreground/90">
-              @{channel.username}
-            </span>
-            {stats.map((s) => (
-              <span key={s.label}>
-                {" · "}
-                {formatCount(s.value ?? 0)} {s.label.toLowerCase()}
-              </span>
-            ))}
-          </p>
-          {channel.createdAt && (
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Joined {formatDate(channel.createdAt)}
-            </p>
-          )}
-          <div className="mt-4 flex gap-2">
-            {isMine ? (
-              <>
-                <Button variant="secondary" className="rounded-full" asChild>
-                  <Link to="/settings">Customize channel</Link>
-                </Button>
-                <Button variant="secondary" className="rounded-full" asChild>
-                  <Link to="/studio">Manage videos</Link>
-                </Button>
-              </>
-            ) : (
-              <Button
-                onClick={toggleSub}
-                disabled={busy}
-                variant={channel.isSubscribed ? "secondary" : "default"}
-                className="rounded-full px-4"
-              >
-                {channel.isSubscribed && <Check />}
-                {channel.isSubscribed ? "Subscribed" : "Subscribe"}
+        </div>
+        <div className="flex gap-2 pb-2">
+          {isMine ? (
+            <>
+              <Button variant="outline" asChild>
+                <Link to="/settings">Customize</Link>
               </Button>
-            )}
-          </div>
+              <Button asChild>
+                <Link to="/studio">Open studio</Link>
+              </Button>
+            </>
+          ) : (
+            <Button
+              onClick={toggleSub}
+              disabled={busy}
+              variant={channel.isSubscribed ? "secondary" : "default"}
+              size="lg"
+            >
+              {channel.isSubscribed && <Check />}
+              {channel.isSubscribed ? "Subscribed" : "Subscribe"}
+            </Button>
+          )}
         </div>
       </div>
 
-      <Tabs defaultValue="videos" className="mt-6">
+      <dl className="mt-8 grid max-w-xl grid-cols-3 border-y border-[var(--color-border)]">
+        {stats.map((s, i) => (
+          <div
+            key={s.label}
+            className={
+              i > 0
+                ? "border-l border-[var(--color-border)] px-5 py-4"
+                : "py-4 pr-5"
+            }
+          >
+            <dt className="eyebrow text-[10px]">{s.label}</dt>
+            <dd className="display mt-2 text-[34px]">
+              {formatCount(s.value ?? 0)}
+            </dd>
+          </div>
+        ))}
+      </dl>
+
+      <Tabs defaultValue="videos" className="mt-10">
         <TabsList>
           <TabsTrigger value="videos">Videos</TabsTrigger>
           <TabsTrigger value="playlists">Playlists</TabsTrigger>

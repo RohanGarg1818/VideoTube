@@ -49,6 +49,7 @@ export function CommunityPage() {
     <div className="mx-auto max-w-2xl">
       <PageHeader
         icon={MessageSquare}
+        eyebrow="The board"
         title="Community"
         subtitle="Updates, thoughts and announcements from creators"
       />

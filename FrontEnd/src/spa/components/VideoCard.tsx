@@ -16,7 +16,7 @@ export function VideoThumb({
   return (
     <div
       className={cn(
-        "relative aspect-video w-full overflow-hidden rounded-xl bg-zinc-800/60",
+        "relative aspect-video w-full overflow-hidden rounded-xl bg-[var(--color-card)]",
         className,
       )}
     >
@@ -25,50 +25,56 @@ export function VideoThumb({
           src={video.thumbnail}
           alt=""
           loading="lazy"
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
         />
       )}
+      <span className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-white/[0.06]" />
       {video.duration ? (
-        <span className="absolute bottom-1.5 right-1.5 rounded bg-black/80 px-1 py-px text-[11px] font-medium tabular-nums text-white">
+        <span className="absolute bottom-2 right-2 rounded-md bg-black/75 px-1.5 py-0.5 font-mono text-[11px] tabular-nums text-white">
           {formatDuration(video.duration)}
         </span>
       ) : null}
       {video.isPublished === false && (
-        <span className="absolute left-1.5 top-1.5 rounded bg-black/80 px-1.5 py-px text-[11px] font-medium text-white">
+        <span className="eyebrow absolute left-2 top-2 rounded-md bg-black/75 px-1.5 py-1 text-[10px] text-amber-300">
           Draft
         </span>
       )}
+      <span className="scrubber group-hover:scale-x-100" />
     </div>
   );
 }
 
-export function VideoCard({ video }: { video: Video; index?: number }) {
+export function VideoCard({ video, index }: { video: Video; index?: number }) {
   const owner = getOwner(video);
   const user = useAuthStore((s) => s.user);
   const isOwner = Boolean(owner?._id && owner._id === user?._id);
 
   return (
-    <article className="group flex flex-col gap-3">
+    <article
+      className="group flex animate-rise flex-col gap-3.5"
+      style={{ animationDelay: `${Math.min(index ?? 0, 11) * 35}ms` }}
+    >
       <Link
         to={`/watch/${video._id}`}
         aria-label={video.title}
         className="rounded-xl"
       >
-        <VideoThumb
-          video={video}
-          className="transition-[border-radius] duration-200 group-hover:rounded-md"
-        />
+        <VideoThumb video={video} />
       </Link>
 
       <div className="flex gap-3">
         {owner && (
           <Link to={`/channel/${owner.username}`} className="shrink-0">
-            <UserAvatar src={owner.avatar} name={owner.fullName} />
+            <UserAvatar
+              src={owner.avatar}
+              name={owner.fullName}
+              className="h-8 w-8"
+            />
           </Link>
         )}
         <div className="min-w-0 flex-1">
           <Link to={`/watch/${video._id}`}>
-            <h3 className="line-clamp-2 text-[15px] font-medium leading-[1.35] text-foreground">
+            <h3 className="line-clamp-2 text-[15px] font-medium leading-[1.35] text-foreground decoration-brand decoration-2 underline-offset-4 group-hover:underline">
               {video.title}
             </h3>
           </Link>
@@ -80,8 +86,10 @@ export function VideoCard({ video }: { video: Video; index?: number }) {
               {owner.fullName ?? owner.username}
             </Link>
           )}
-          <p className="text-[13px] text-muted-foreground">
-            {formatViews(video.views)} views · {timeAgo(video.createdAt)}
+          <p className="eyebrow mt-2 text-[10.5px]">
+            {formatViews(video.views)} views{" "}
+            <span className="mx-1 text-brand">/</span>{" "}
+            {timeAgo(video.createdAt)}
           </p>
         </div>
         {isOwner && (
@@ -126,8 +134,10 @@ export function VideoRow({
             {owner.fullName}
           </Link>
         )}
-        <p className="text-xs text-muted-foreground">
-          {formatViews(video.views)} views · {timeAgo(video.createdAt)}
+        <p className="eyebrow mt-1.5 text-[10px]">
+          {formatViews(video.views)} views{" "}
+          <span className="mx-0.5 text-brand">/</span>{" "}
+          {timeAgo(video.createdAt)}
         </p>
       </div>
       {actions}

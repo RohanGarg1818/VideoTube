@@ -24,7 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { DashboardAPI, VideoAPI, type Video } from "../services/endpoints";
 import { useAsync, usePaginated } from "../hooks/useAsync";
 import { EmptyState, ErrorState } from "../components/EmptyState";
-import { PageHeader } from "../components/PageHeader";
+import { PageHeader, SectionHeading } from "../components/PageHeader";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { LoadMore } from "../components/LoadMore";
 import { VideoThumb } from "../components/VideoCard";
@@ -46,15 +46,18 @@ function StatCard({
   tint?: string;
 }) {
   return (
-    <div className="surface rounded-xl p-4">
-      <div className="flex items-center justify-between text-[13px] text-muted-foreground">
-        {label}
-        <Icon className="h-4 w-4" strokeWidth={1.75} />
+    <div className="surface group relative overflow-hidden rounded-2xl p-5">
+      <div className="flex items-center justify-between">
+        <span className="eyebrow text-[10px]">{label}</span>
+        <Icon
+          className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-brand"
+          strokeWidth={1.5}
+        />
       </div>
-      <p className="mt-2 text-2xl font-semibold tabular-nums tracking-tight">
+      <p className="display mt-4 text-[52px] tabular-nums">
         {formatCount(value)}
       </p>
-      <p className="mt-0.5 h-4 text-xs text-muted-foreground">{hint}</p>
+      <p className="mt-2 h-4 font-mono text-[11px] text-brand">{hint}</p>
     </div>
   );
 }
@@ -102,8 +105,8 @@ export function StudioPage() {
     <div>
       <PageHeader
         icon={LayoutDashboard}
-        title="Creator studio"
-        subtitle={`Channel analytics for @${me.username}`}
+        eyebrow={`Studio · @${me.username}`}
+        title="Your channel at a glance"
         actions={
           <>
             <Button variant="outline" asChild>
@@ -160,9 +163,9 @@ export function StudioPage() {
 
           {s && (
             <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_380px]">
-              <div className="surface rounded-xl p-5">
+              <div className="surface rounded-2xl p-5">
                 <div className="mb-4 flex items-baseline justify-between">
-                  <h2 className="font-semibold">Views by upload month</h2>
+                  <h2 className="display text-[26px]">Views by month</h2>
                   <span className="text-xs text-muted-foreground">
                     {s.publishedVideos} published · {s.draftVideos} drafts ·{" "}
                     {formatLongDuration(s.totalDuration)} of content
@@ -185,12 +188,12 @@ export function StudioPage() {
                           >
                             <stop
                               offset="0%"
-                              stopColor="#e4e4e7"
-                              stopOpacity={0.14}
+                              stopColor="#ff6a2b"
+                              stopOpacity={0.28}
                             />
                             <stop
                               offset="100%"
-                              stopColor="#e4e4e7"
+                              stopColor="#ff6a2b"
                               stopOpacity={0}
                             />
                           </linearGradient>
@@ -215,7 +218,7 @@ export function StudioPage() {
                         />
                         <Tooltip
                           contentStyle={{
-                            background: "#1c1c1f",
+                            background: "#211d19",
                             border: "1px solid rgba(255,255,255,0.12)",
                             borderRadius: 8,
                             fontSize: 12,
@@ -224,8 +227,8 @@ export function StudioPage() {
                         <Area
                           type="monotone"
                           dataKey="views"
-                          stroke="#d4d4d8"
-                          strokeWidth={1.75}
+                          stroke="#ff6a2b"
+                          strokeWidth={2}
                           fill="url(#viewsFill)"
                         />
                       </AreaChart>
@@ -238,8 +241,8 @@ export function StudioPage() {
                 )}
               </div>
 
-              <div className="surface rounded-xl p-5">
-                <h2 className="mb-3 font-semibold">Top videos</h2>
+              <div className="surface rounded-2xl p-5">
+                <h2 className="display mb-4 text-[26px]">Top videos</h2>
                 {s.topVideos.length ? (
                   <ol className="space-y-2">
                     {s.topVideos.map((v, i) => (
@@ -248,7 +251,7 @@ export function StudioPage() {
                           to={`/watch/${v._id}`}
                           className="flex items-center gap-3 rounded-xl p-1.5 hover:bg-white/5"
                         >
-                          <span className="w-4 text-sm font-bold text-muted-foreground">
+                          <span className="display w-6 text-[26px] italic text-brand">
                             {i + 1}
                           </span>
                           <img
@@ -280,12 +283,13 @@ export function StudioPage() {
         </>
       )}
 
-      <h2 className="mb-4 mt-10 flex items-center gap-2 text-base font-semibold">
-        Your content{" "}
-        <span className="text-sm font-normal text-muted-foreground">
-          ({videos.total})
-        </span>
-      </h2>
+      <div className="mt-14">
+        <SectionHeading
+          index="02"
+          title="Your content"
+          right={<span className="eyebrow">{videos.total} videos</span>}
+        />
+      </div>
       {videos.loading ? (
         <div className="skeleton h-64 rounded-xl" />
       ) : videos.errorMessage ? (
@@ -307,7 +311,7 @@ export function StudioPage() {
         <div className="surface overflow-x-auto rounded-xl">
           <table className="w-full min-w-[720px] text-sm">
             <thead>
-              <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wider text-muted-foreground">
+              <tr className="border-b border-white/10 text-left font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                 <th className="p-4 font-medium">Video</th>
                 <th className="p-4 font-medium">Visibility</th>
                 <th className="p-4 font-medium">Date</th>
@@ -355,13 +359,13 @@ export function StudioPage() {
                   <td className="p-4 text-muted-foreground">
                     {formatDate(v.createdAt)}
                   </td>
-                  <td className="p-4 text-right tabular-nums">
+                  <td className="p-4 text-right font-mono text-[13px] tabular-nums">
                     {formatCount(v.views)}
                   </td>
-                  <td className="p-4 text-right tabular-nums">
+                  <td className="p-4 text-right font-mono text-[13px] tabular-nums">
                     {formatCount(v.likes)}
                   </td>
-                  <td className="p-4 text-right tabular-nums">
+                  <td className="p-4 text-right font-mono text-[13px] tabular-nums">
                     {formatCount(v.commentsCount ?? 0)}
                   </td>
                   <td className="p-4">

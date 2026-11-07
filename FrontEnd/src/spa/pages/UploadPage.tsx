@@ -112,6 +112,7 @@ export function UploadPage() {
     <div className="mx-auto max-w-5xl">
       <PageHeader
         icon={CloudUpload}
+        eyebrow="Studio · New upload"
         title="Upload video"
         subtitle="MP4, WebM, MOV or MKV · up to 500 MB"
       />

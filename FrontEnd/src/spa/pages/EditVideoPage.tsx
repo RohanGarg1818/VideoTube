@@ -109,6 +109,7 @@ export function EditVideoPage() {
       </Button>
       <PageHeader
         icon={Pencil}
+        eyebrow="Studio · Edit"
         title="Edit video"
         subtitle={`Uploaded ${timeAgo(video.createdAt)}`}
         actions={

@@ -64,8 +64,8 @@ export function SignupPage() {
 
   return (
     <div className="w-full max-w-[440px]">
-      <h1 className="text-2xl font-semibold tracking-[-0.02em]">
-        Create your account
+      <h1 className="display text-[52px]">
+        Start your <span className="italic text-brand">channel.</span>
       </h1>
       <p className="mt-1.5 text-sm text-muted-foreground">
         Set up your channel to start uploading.
@@ -174,7 +174,7 @@ export function SignupPage() {
           </p>
         )}
 
-        <Button type="submit" className="w-full" disabled={loading}>
+        <Button type="submit" className="w-full" size="lg" disabled={loading}>
           {loading && <Loader2 className="animate-spin" />}
           {loading ? "Creating your channel…" : "Create account"}
         </Button>
