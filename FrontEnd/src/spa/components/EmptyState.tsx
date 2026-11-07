@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { AlertTriangle, Inbox, RotateCw } from "lucide-react";
+import { AlertCircle, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function EmptyState({
@@ -14,20 +14,17 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="glass mx-auto flex max-w-lg animate-fade-up flex-col items-center justify-center rounded-3xl px-6 py-14 text-center">
-      <div className="relative mb-5">
-        <div className="absolute inset-0 rounded-full bg-fuchsia-500/30 blur-2xl" />
-        <div className="relative grid h-16 w-16 place-items-center rounded-2xl border border-white/10 bg-white/5">
-          <Icon className="h-7 w-7 text-fuchsia-300" />
-        </div>
+    <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
+      <div className="mb-4 grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-white/[0.03]">
+        <Icon className="h-5 w-5 text-muted-foreground" strokeWidth={1.75} />
       </div>
-      <h3 className="text-lg font-semibold">{title}</h3>
+      <h3 className="text-[15px] font-medium">{title}</h3>
       {description && (
-        <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
+        <p className="mt-1 max-w-sm text-sm text-muted-foreground">
           {description}
         </p>
       )}
-      {action && <div className="mt-6">{action}</div>}
+      {action && <div className="mt-5">{action}</div>}
     </div>
   );
 }
@@ -41,13 +38,13 @@ export function ErrorState({
 }) {
   return (
     <EmptyState
-      icon={AlertTriangle}
-      title="Something went wrong"
+      icon={AlertCircle}
+      title="Couldn't load this"
       description={message}
       action={
         onRetry && (
-          <Button variant="secondary" onClick={onRetry}>
-            <RotateCw /> Try again
+          <Button variant="outline" size="sm" onClick={onRetry}>
+            Try again
           </Button>
         )
       }

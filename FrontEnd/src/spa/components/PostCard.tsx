@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Heart, Pencil, Trash2 } from "lucide-react";
+import { Pencil, ThumbsUp, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -68,7 +68,7 @@ export function PostCard({
   };
 
   return (
-    <article className="glass glass-hover animate-fade-up rounded-3xl p-5">
+    <article className="surface rounded-xl p-5">
       <div className="flex items-center gap-3">
         <Link to={owner ? `/channel/${owner.username}` : "#"}>
           <UserAvatar
@@ -119,10 +119,12 @@ export function PostCard({
             onClick={like}
             className={cn(
               "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors hover:bg-white/10",
-              post.isLiked ? "text-pink-400" : "text-muted-foreground",
+              post.isLiked ? "text-foreground" : "text-muted-foreground",
             )}
           >
-            <Heart className={cn("h-4 w-4", post.isLiked && "fill-current")} />{" "}
+            <ThumbsUp
+              className={cn("h-4 w-4", post.isLiked && "fill-current")}
+            />{" "}
             {formatCount(post.likesCount ?? 0)}
           </button>
           {isMine && (
@@ -150,7 +152,7 @@ export function PostCard({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-red-300 hover:text-red-200"
+                    className="text-red-400 hover:text-red-400"
                   >
                     <Trash2 /> Delete
                   </Button>

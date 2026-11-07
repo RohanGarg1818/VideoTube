@@ -35,7 +35,7 @@ The backend is the core of the project: a **production-style REST API** built wi
 
 | Backend | Frontend |
 | --- | --- |
-| Refresh-token **rotation with reuse detection** (hashed tokens at rest) | "Aurora glass" design system (glassmorphism and animated gradients) |
+| Refresh-token **rotation with reuse detection** (hashed tokens at rest) | Minimal dark design system (neutral palette, Inter, consistent spacing) |
 | **Zod** validation on every route: params, query and body | Infinite scroll on every feed |
 | **Rate limiting** (global, plus a strict limiter on credential endpoints) | Optimistic likes and subscriptions |
 | Ownership checks on every mutation (videos, playlists, comments, posts) | Drag-and-drop uploads with live preview and **upload progress** |
@@ -315,15 +315,15 @@ VideoTube/
 │   ├── Dockerfile · docker-compose.yml · .env.example
 └── FrontEnd/
     └── src/
-        ├── components/ui/ # Radix/shadcn primitives (glass-themed)
+        ├── components/ui/ # Radix/shadcn primitives (themed)
         ├── spa/
         │   ├── components/  # VideoCard, CommentSection, PostCard, ImageDrop, ConfirmDialog, …
         │   ├── hooks/       # useAsync, usePaginated, useInView
-        │   ├── layout/      # AppLayout, Navbar, Sidebar, AuthLayout, Aurora background
+        │   ├── layout/      # AppLayout, Navbar, Sidebar, AuthLayout
         │   ├── pages/       # Home, Watch, Channel, Studio, Upload, Playlists, …
         │   ├── services/    # axios client (single-flight refresh) + typed endpoints
         │   └── store/       # zustand auth store
-        └── styles.css      # design tokens + glass utilities
+        └── styles.css      # design tokens + surface utilities
 ```
 
 ---

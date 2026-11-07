@@ -54,7 +54,7 @@ export function CommunityPage() {
       />
 
       {me ? (
-        <form onSubmit={create} className="glass mb-6 rounded-3xl p-5">
+        <form onSubmit={create} className="surface mb-6 rounded-xl p-5">
           <div className="flex gap-3">
             <UserAvatar
               src={me.avatar}
@@ -85,10 +85,10 @@ export function CommunityPage() {
           </div>
         </form>
       ) : (
-        <div className="glass mb-6 rounded-3xl p-5 text-sm text-muted-foreground">
+        <div className="surface mb-6 rounded-xl p-5 text-sm text-muted-foreground">
           <Link
             to="/login"
-            className="font-semibold text-fuchsia-300 hover:underline"
+            className="font-medium text-foreground underline underline-offset-4 decoration-white/30 hover:decoration-white"
           >
             Sign in
           </Link>{" "}
@@ -99,7 +99,7 @@ export function CommunityPage() {
       {loading ? (
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="skeleton h-36 rounded-3xl" />
+            <div key={i} className="skeleton h-36 rounded-xl" />
           ))}
         </div>
       ) : errorMessage ? (

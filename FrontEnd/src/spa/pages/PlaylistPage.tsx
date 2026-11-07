@@ -39,7 +39,7 @@ export function PlaylistPage() {
       [playlistId],
     );
 
-  if (loading) return <div className="skeleton h-80 rounded-3xl" />;
+  if (loading) return <div className="skeleton h-80 rounded-xl" />;
   if (error)
     return (
       <ErrorState
@@ -70,23 +70,15 @@ export function PlaylistPage() {
   return (
     <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
       <aside className="lg:sticky lg:top-24 lg:self-start">
-        <div className="glass relative animate-fade-up overflow-hidden rounded-3xl p-5">
-          {cover && (
-            <img
-              src={cover}
-              alt=""
-              aria-hidden
-              className="absolute inset-0 -z-10 h-full w-full scale-125 object-cover opacity-30 blur-3xl"
-            />
-          )}
-          <div className="aspect-video overflow-hidden rounded-2xl bg-gradient-to-br from-violet-800/60 to-fuchsia-800/40 ring-1 ring-white/10">
+        <div className="surface relative overflow-hidden rounded-xl p-5">
+          <div className="aspect-video overflow-hidden rounded-xl bg-zinc-800 ">
             {cover ? (
               <img src={cover} alt="" className="h-full w-full object-cover" />
             ) : (
               <ListVideo className="m-auto h-full w-10 text-white/40" />
             )}
           </div>
-          <h1 className="mt-5 text-2xl font-extrabold tracking-tight">
+          <h1 className="mt-5 text-xl font-semibold tracking-tight">
             {data.name}
           </h1>
           {owner && (
@@ -183,7 +175,7 @@ export function PlaylistPage() {
             description="Use the Save button on any video to add it here."
           />
         ) : (
-          <div className="glass space-y-1 rounded-3xl p-3">
+          <div className="surface space-y-1 rounded-xl p-3">
             {videos.map((v, i) => (
               <div key={v._id} className="flex items-center gap-2">
                 <span className="w-6 shrink-0 text-center text-sm text-muted-foreground">

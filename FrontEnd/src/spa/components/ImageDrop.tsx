@@ -48,9 +48,9 @@ export function ImageDrop({
         pick(e.dataTransfer.files?.[0]);
       }}
       className={cn(
-        "group relative grid cursor-pointer place-items-center overflow-hidden border-2 border-dashed border-white/15 bg-white/[0.03] text-center transition-all hover:border-fuchsia-400/50 hover:bg-white/[0.06]",
-        drag && "border-fuchsia-400 bg-fuchsia-500/10",
-        shape === "round" ? "h-28 w-28 rounded-full" : "rounded-2xl",
+        "group relative grid cursor-pointer place-items-center overflow-hidden border border-dashed border-white/15 bg-white/[0.02] text-center transition-colors hover:border-white/30 hover:bg-white/[0.04]",
+        drag && "border-white/40 bg-white/[0.05]",
+        shape === "round" ? "h-28 w-28 rounded-full" : "rounded-xl",
         shape === "wide" && "aspect-[4/1] w-full",
         shape === "video" && "aspect-video w-full",
         className,
@@ -89,8 +89,13 @@ export function ImageDrop({
         </>
       ) : (
         <div className="p-3">
-          <ImagePlus className="mx-auto h-6 w-6 text-fuchsia-300" />
-          <p className="mt-1.5 text-xs font-medium">{label}</p>
+          <ImagePlus
+            className="mx-auto h-5 w-5 text-muted-foreground"
+            strokeWidth={1.75}
+          />
+          <p className="mt-1.5 text-xs font-medium text-foreground/90">
+            {label}
+          </p>
           {hint && shape !== "round" && (
             <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p>
           )}

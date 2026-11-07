@@ -1,6 +1,14 @@
 import { Link } from "react-router-dom";
-import { Play } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+export function LogoMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 28 20" className={cn("h-5 w-7", className)} aria-hidden>
+      <rect width="28" height="20" rx="5" fill="var(--color-brand)" />
+      <path d="M11.5 6.2v7.6L18 10z" fill="#fff" />
+    </svg>
+  );
+}
 
 export function Logo({
   className,
@@ -13,19 +21,13 @@ export function Logo({
     <Link
       to="/"
       className={cn(
-        "group flex items-center gap-2.5 font-extrabold tracking-tight",
+        "flex items-center gap-2 text-[17px] font-semibold tracking-[-0.02em]",
         className,
       )}
+      aria-label="VideoTube home"
     >
-      <span className="relative grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 shadow-lg shadow-fuchsia-500/30 transition-transform group-hover:scale-105">
-        <Play className="h-4 w-4 translate-x-[1px] fill-white text-white" />
-        <span className="absolute inset-0 rounded-xl ring-1 ring-inset ring-white/30" />
-      </span>
-      {!compact && (
-        <span className="text-lg">
-          Video<span className="text-gradient">Tube</span>
-        </span>
-      )}
+      <LogoMark />
+      {!compact && <span>VideoTube</span>}
     </Link>
   );
 }

@@ -41,7 +41,7 @@ export function ChangePasswordPage() {
         title="Change password"
         subtitle="Changing your password signs you out everywhere else."
       />
-      <form onSubmit={submit} className="glass space-y-5 rounded-3xl p-6">
+      <form onSubmit={submit} className="surface space-y-5 rounded-xl p-6">
         <div className="space-y-2">
           <Label htmlFor="old">Current password</Label>
           <Input
@@ -79,7 +79,7 @@ export function ChangePasswordPage() {
             autoComplete="new-password"
           />
           {mismatch && (
-            <p className="text-xs text-red-300">Passwords don't match</p>
+            <p className="text-xs text-red-400">Passwords don't match</p>
           )}
         </div>
         <Button

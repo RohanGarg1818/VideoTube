@@ -53,7 +53,7 @@ export function SignupPage() {
       if (coverImage) form.append("coverImage", coverImage);
       await AuthAPI.register(form);
       await login({ email: email.trim(), password });
-      toast.success("Welcome to VideoTube 🎉");
+      toast.success("Account created");
       navigate("/", { replace: true });
     } catch (err) {
       setError(apiErrorMessage(err, "Could not create your account"));
@@ -63,10 +63,12 @@ export function SignupPage() {
   };
 
   return (
-    <div className="glass-strong w-full max-w-lg rounded-3xl p-8">
-      <h2 className="text-2xl font-bold tracking-tight">Create your account</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Start your channel in less than a minute.
+    <div className="w-full max-w-[440px]">
+      <h1 className="text-2xl font-semibold tracking-[-0.02em]">
+        Create your account
+      </h1>
+      <p className="mt-1.5 text-sm text-muted-foreground">
+        Set up your channel to start uploading.
       </p>
 
       <form onSubmit={handle} className="mt-6 space-y-4">
@@ -167,20 +169,20 @@ export function SignupPage() {
         </div>
 
         {error && (
-          <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+          <p className="rounded-lg border border-red-500/20 bg-red-500/[0.08] px-3 py-2 text-[13px] text-red-400">
             {error}
           </p>
         )}
 
-        <Button type="submit" size="lg" className="w-full" disabled={loading}>
-          {loading ? <Loader2 className="animate-spin" /> : <UserPlus />}
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading && <Loader2 className="animate-spin" />}
           {loading ? "Creating your channel…" : "Create account"}
         </Button>
         <p className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}
           <Link
             to="/login"
-            className="font-semibold text-fuchsia-300 hover:underline"
+            className="font-medium text-foreground underline underline-offset-4 decoration-white/30 hover:decoration-white"
           >
             Sign in
           </Link>

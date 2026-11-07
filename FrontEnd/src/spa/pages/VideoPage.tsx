@@ -1,14 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import {
-  Bell,
-  BellRing,
-  Eye,
-  Calendar,
-  Heart,
-  Pencil,
-  Share2,
-} from "lucide-react";
+import { Check, Pencil, Share2, ThumbsUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LikeAPI, SubAPI, VideoAPI, type Video } from "../services/endpoints";
 import { useAsync } from "../hooks/useAsync";
@@ -78,15 +70,15 @@ export function VideoPage() {
 
   if (loading && !video) {
     return (
-      <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
         <div className="space-y-4">
-          <div className="skeleton aspect-video w-full rounded-3xl" />
+          <div className="skeleton aspect-video w-full rounded-xl" />
           <div className="skeleton h-7 w-2/3 rounded-lg" />
-          <div className="skeleton h-16 w-full rounded-2xl" />
+          <div className="skeleton h-16 w-full rounded-xl" />
         </div>
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="skeleton h-24 rounded-2xl" />
+            <div key={i} className="skeleton h-24 rounded-xl" />
           ))}
         </div>
       </div>
@@ -172,46 +164,31 @@ export function VideoPage() {
   };
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-      <div className="min-w-0 animate-fade-up">
-        <div className="relative">
-          {video.thumbnail && (
-            <img
-              src={video.thumbnail}
-              alt=""
-              aria-hidden
-              className="absolute inset-0 -z-10 h-full w-full scale-105 rounded-3xl object-cover opacity-40 blur-3xl"
+    <div className="grid gap-x-6 gap-y-8 xl:grid-cols-[minmax(0,1fr)_400px]">
+      <div className="min-w-0">
+        <div className="aspect-video w-full overflow-hidden rounded-xl bg-black">
+          {video.videoFile ? (
+            <video
+              key={video._id}
+              src={video.videoFile}
+              controls
+              autoPlay
+              playsInline
+              poster={video.thumbnail}
+              className="h-full w-full"
             />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+              Video unavailable
+            </div>
           )}
-          <div className="aspect-video w-full overflow-hidden rounded-3xl bg-black shadow-2xl shadow-black/50 ring-1 ring-white/10">
-            {video.videoFile ? (
-              <video
-                key={video._id}
-                src={video.videoFile}
-                controls
-                autoPlay
-                playsInline
-                poster={video.thumbnail}
-                className="h-full w-full"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                Video unavailable
-              </div>
-            )}
-          </div>
         </div>
 
-        <h1 className="mt-5 text-xl font-bold leading-snug tracking-tight md:text-2xl">
+        <h1 className="mt-4 text-xl font-semibold leading-snug tracking-[-0.01em]">
           {video.title}
         </h1>
-        {video.isPublished === false && (
-          <span className="mt-2 inline-block rounded-lg bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-200">
-            Draft — only you can see this video
-          </span>
-        )}
 
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           {owner && (
             <div className="flex min-w-0 items-center gap-3">
               <Link
@@ -221,11 +198,12 @@ export function VideoPage() {
                 <UserAvatar
                   src={owner.avatar}
                   name={owner.fullName}
-                  className="h-11 w-11"
-                  ring
+                  className="h-10 w-10"
                 />
                 <div className="min-w-0">
-                  <div className="truncate font-semibold">{owner.fullName}</div>
+                  <div className="truncate text-[15px] font-medium leading-tight">
+                    {owner.fullName}
+                  </div>
                   <div className="truncate text-xs text-muted-foreground">
                     {plural(owner.subscribersCount, "subscriber")}
                   </div>
@@ -236,10 +214,9 @@ export function VideoPage() {
                   onClick={handleSub}
                   disabled={busy}
                   variant={subscribed ? "secondary" : "default"}
-                  size="sm"
-                  className="ml-2 rounded-full px-4"
+                  className="ml-3 rounded-full px-4"
                 >
-                  {subscribed ? <BellRing /> : <Bell />}
+                  {subscribed && <Check />}
                   {subscribed ? "Subscribed" : "Subscribe"}
                 </Button>
               )}
@@ -250,19 +227,14 @@ export function VideoPage() {
             <Button
               onClick={handleLike}
               variant="secondary"
-              size="sm"
-              className={cn(
-                "rounded-full",
-                liked &&
-                  "border-pink-400/40 bg-pink-500/15 text-pink-200 hover:bg-pink-500/25",
-              )}
+              className="rounded-full"
+              aria-pressed={liked}
             >
-              <Heart className={cn(liked && "fill-current")} />{" "}
+              <ThumbsUp className={cn(liked && "fill-current")} />{" "}
               {formatCount(video.likes)}
             </Button>
             <Button
               variant="secondary"
-              size="sm"
               className="rounded-full"
               onClick={share}
             >
@@ -270,12 +242,7 @@ export function VideoPage() {
             </Button>
             <SaveToPlaylist videoId={video._id} />
             {isOwner && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-full"
-                asChild
-              >
+              <Button variant="secondary" className="rounded-full" asChild>
                 <Link to={`/video/edit/${video._id}`}>
                   <Pencil /> Edit
                 </Link>
@@ -284,25 +251,23 @@ export function VideoPage() {
           </div>
         </div>
 
-        <div className="glass mt-5 rounded-2xl p-4">
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium">
-            <span className="flex items-center gap-1.5">
-              <Eye className="h-4 w-4 text-fuchsia-300" />{" "}
-              {formatViews(video.views)} views
-            </span>
-            <span
-              className="flex items-center gap-1.5"
-              title={formatDate(video.createdAt)}
-            >
-              <Calendar className="h-4 w-4 text-fuchsia-300" />{" "}
+        <div className="mt-4 rounded-xl bg-white/[0.05] p-3.5 text-sm">
+          <p className="font-medium">
+            {formatViews(video.views)} views{" "}
+            <span className="ml-2" title={formatDate(video.createdAt)}>
               {timeAgo(video.createdAt)}
             </span>
-          </div>
+            {video.isPublished === false && (
+              <span className="ml-2 text-amber-400">
+                · Draft (only visible to you)
+              </span>
+            )}
+          </p>
           {video.description ? (
             <>
               <p
                 className={cn(
-                  "mt-3 whitespace-pre-wrap text-sm leading-relaxed text-foreground/85",
+                  "mt-2 whitespace-pre-wrap leading-relaxed text-foreground/90",
                   !expanded && "line-clamp-3",
                 )}
               >
@@ -311,16 +276,14 @@ export function VideoPage() {
               {video.description.length > 180 && (
                 <button
                   onClick={() => setExpanded((v) => !v)}
-                  className="mt-2 text-sm font-semibold text-fuchsia-300 hover:underline"
+                  className="mt-1 font-medium hover:underline"
                 >
-                  {expanded ? "Show less" : "Show more"}
+                  {expanded ? "Show less" : "…more"}
                 </button>
               )}
             </>
           ) : (
-            <p className="mt-3 text-sm italic text-muted-foreground">
-              No description provided.
-            </p>
+            <p className="mt-2 text-muted-foreground">No description.</p>
           )}
         </div>
 
@@ -328,13 +291,16 @@ export function VideoPage() {
       </div>
 
       <aside className="min-w-0">
-        <h2 className="mb-3 px-1 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Up next
-        </h2>
         <div className="space-y-2">
           {relatedLoading ? (
             Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="skeleton h-24 rounded-2xl" />
+              <div key={i} className="flex gap-3 p-1">
+                <div className="skeleton aspect-video w-[168px] rounded-lg" />
+                <div className="flex-1 space-y-2 pt-1">
+                  <div className="skeleton h-3.5 w-full rounded" />
+                  <div className="skeleton h-3 w-2/3 rounded" />
+                </div>
+              </div>
             ))
           ) : related?.length ? (
             related.map((v) => <VideoRow key={v._id} video={v} />)

@@ -36,7 +36,7 @@ export function LoginPage() {
     try {
       const id = identifier.trim();
       await login({ [id.includes("@") ? "email" : "username"]: id, password });
-      toast.success("Welcome back!");
+
       navigate(from.startsWith("/") ? from : "/", { replace: true });
     } catch (err) {
       setError(apiErrorMessage(err, "Invalid credentials"));
@@ -46,10 +46,10 @@ export function LoginPage() {
   };
 
   return (
-    <div className="glass-strong w-full max-w-md rounded-3xl p-8">
-      <h2 className="text-2xl font-bold tracking-tight">Sign in</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Welcome back — let's get you watching.
+    <div className="w-full max-w-[380px]">
+      <h1 className="text-2xl font-semibold tracking-[-0.02em]">Sign in</h1>
+      <p className="mt-1.5 text-sm text-muted-foreground">
+        Welcome back. Enter your details to continue.
       </p>
 
       <form onSubmit={handle} className="mt-8 space-y-5">
@@ -94,20 +94,20 @@ export function LoginPage() {
         </div>
 
         {error && (
-          <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+          <p className="rounded-lg border border-red-500/20 bg-red-500/[0.08] px-3 py-2 text-[13px] text-red-400">
             {error}
           </p>
         )}
 
-        <Button type="submit" size="lg" className="w-full" disabled={loading}>
-          {loading ? <Loader2 className="animate-spin" /> : <LogIn />}
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading && <Loader2 className="animate-spin" />}
           {loading ? "Signing in…" : "Sign in"}
         </Button>
         <p className="text-center text-sm text-muted-foreground">
           New to VideoTube?{" "}
           <Link
             to="/signup"
-            className="font-semibold text-fuchsia-300 hover:underline"
+            className="font-medium text-foreground underline underline-offset-4 decoration-white/30 hover:decoration-white"
           >
             Create an account
           </Link>

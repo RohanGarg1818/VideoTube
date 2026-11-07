@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MessageSquare, Pencil, Trash2 } from "lucide-react";
+import { Pencil, ThumbsUp, Trash2 } from "lucide-react";
 import { CommentAPI, LikeAPI, type Comment } from "../services/endpoints";
 import { usePaginated } from "../hooks/useAsync";
 import { useAuthStore } from "../store/authStore";
@@ -58,9 +58,8 @@ export function CommentSection({ videoId }: { videoId: string }) {
   };
 
   return (
-    <section className="glass mt-6 rounded-3xl p-5 md:p-6">
-      <h2 className="mb-5 flex items-center gap-2 text-lg font-semibold">
-        <MessageSquare className="h-5 w-5 text-fuchsia-300" />
+    <section className="mt-8">
+      <h2 className="mb-6 text-lg font-semibold tracking-tight">
         {formatCount(total)} {total === 1 ? "Comment" : "Comments"}
       </h2>
 
@@ -106,10 +105,10 @@ export function CommentSection({ videoId }: { videoId: string }) {
           </div>
         </div>
       ) : (
-        <p className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-muted-foreground">
+        <p className="mb-8 text-sm text-muted-foreground">
           <Link
             to="/login"
-            className="font-medium text-fuchsia-300 hover:underline"
+            className="font-medium text-foreground underline underline-offset-4 decoration-white/30 hover:decoration-white"
           >
             Sign in
           </Link>{" "}
@@ -258,10 +257,10 @@ function CommentItem({
               onClick={toggleLike}
               className={cn(
                 "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs transition-colors hover:bg-white/10",
-                comment.isLiked ? "text-pink-400" : "text-muted-foreground",
+                comment.isLiked ? "text-foreground" : "text-muted-foreground",
               )}
             >
-              <Heart
+              <ThumbsUp
                 className={cn("h-3.5 w-3.5", comment.isLiked && "fill-current")}
               />
               {comment.likesCount ? formatCount(comment.likesCount) : ""}
@@ -291,7 +290,7 @@ function CommentItem({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 px-2 text-xs text-red-300 hover:text-red-200"
+                      className="h-7 px-2 text-xs text-red-400 hover:text-red-400"
                     >
                       <Trash2 className="h-3.5 w-3.5" /> Delete
                     </Button>

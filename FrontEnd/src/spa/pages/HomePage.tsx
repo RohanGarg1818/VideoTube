@@ -1,14 +1,6 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import {
-  Clock,
-  Film,
-  Flame,
-  Heart,
-  Search,
-  Sparkles,
-  Upload,
-} from "lucide-react";
+import { Film, Plus } from "lucide-react";
 import { VideoAPI, type VideoSort } from "../services/endpoints";
 import { usePaginated } from "../hooks/useAsync";
 import {
@@ -22,10 +14,10 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore } from "../store/authStore";
 import { cn } from "@/lib/utils";
 
-const SORTS: { key: VideoSort; label: string; icon: typeof Clock }[] = [
-  { key: "createdAt", label: "Latest", icon: Clock },
-  { key: "views", label: "Most viewed", icon: Flame },
-  { key: "likes", label: "Most liked", icon: Heart },
+const SORTS: { key: VideoSort; label: string }[] = [
+  { key: "createdAt", label: "Latest" },
+  { key: "views", label: "Most viewed" },
+  { key: "likes", label: "Most liked" },
 ];
 
 export function HomePage({
@@ -61,76 +53,34 @@ export function HomePage({
 
   return (
     <div>
-      {!query && defaultSort === "createdAt" && (
-        <section className="glass relative mb-8 animate-fade-up overflow-hidden rounded-3xl p-6 md:p-10">
-          <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-fuchsia-500/30 blur-3xl" />
-          <div className="absolute -bottom-24 right-40 h-60 w-60 rounded-full bg-violet-500/30 blur-3xl" />
-          <div className="relative max-w-2xl">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-fuchsia-200">
-              <Sparkles className="h-3.5 w-3.5" /> Fresh from creators
-            </span>
-            <h1 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight md:text-5xl">
-              {user ? (
-                <>
-                  Welcome back,{" "}
-                  <span className="text-gradient">
-                    {user.fullName.split(" ")[0]}
-                  </span>
-                </>
-              ) : (
-                <>
-                  Discover videos{" "}
-                  <span className="text-gradient">worth watching</span>
-                </>
-              )}
-            </h1>
-            <p className="mt-3 text-muted-foreground md:text-lg">
-              Explore the latest uploads, follow creators you love and share
-              your own story.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Button size="lg" asChild>
-                <Link to={user ? "/upload" : "/signup"}>
-                  <Upload /> {user ? "Upload a video" : "Get started"}
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link to="/explore">
-                  <Flame /> Trending now
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-      )}
-
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="sticky top-14 z-20 -mx-4 mb-6 flex flex-wrap items-center gap-2 bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         {query ? (
-          <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <Search className="h-5 w-5 text-fuchsia-300" />
+          <p className="mr-auto text-sm text-muted-foreground">
             {loading
               ? "Searching…"
               : `${total} result${total === 1 ? "" : "s"} for`}{" "}
-            <span className="text-gradient">"{query}"</span>
-          </h2>
+            <span className="font-medium text-foreground">“{query}”</span>
+          </p>
         ) : (
-          <h2 className="text-xl font-bold tracking-tight">
-            {defaultSort === "views" ? "Trending" : "Recommended"}
-          </h2>
+          defaultSort === "views" && (
+            <h1 className="mr-4 text-lg font-semibold tracking-tight">
+              Trending
+            </h1>
+          )
         )}
-        <div className="glass flex gap-1 rounded-full p-1">
-          {SORTS.map(({ key, label, icon: Icon }) => (
+        <div className="flex gap-2">
+          {SORTS.map(({ key, label }) => (
             <button
               key={key}
               onClick={() => setSortBy(key)}
               className={cn(
-                "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all",
+                "h-8 rounded-lg px-3 text-[13px] font-medium transition-colors",
                 sortBy === key
-                  ? "bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-fuchsia-500/25"
-                  : "text-muted-foreground hover:bg-white/10 hover:text-foreground",
+                  ? "bg-zinc-100 text-zinc-900"
+                  : "bg-white/[0.07] text-foreground hover:bg-white/[0.11]",
               )}
             >
-              <Icon className="h-3.5 w-3.5" /> {label}
+              {label}
             </button>
           ))}
         </div>
@@ -143,17 +93,17 @@ export function HomePage({
       ) : !items.length ? (
         <EmptyState
           icon={Film}
-          title={query ? `No results for "${query}"` : "No videos yet"}
+          title={query ? "No results found" : "No videos yet"}
           description={
             query
-              ? "Try different keywords."
-              : "Be the first to upload something amazing."
+              ? "Try different keywords or check the spelling."
+              : "Uploads from creators will appear here."
           }
           action={
             user && !query ? (
               <Button asChild>
                 <Link to="/upload">
-                  <Upload /> Upload video
+                  <Plus /> Upload a video
                 </Link>
               </Button>
             ) : undefined
@@ -162,8 +112,8 @@ export function HomePage({
       ) : (
         <>
           <VideoGrid>
-            {items.map((v, i) => (
-              <VideoCard key={v._id} video={v} index={i % 16} />
+            {items.map((v) => (
+              <VideoCard key={v._id} video={v} />
             ))}
           </VideoGrid>
           <LoadMore

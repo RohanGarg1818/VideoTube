@@ -5,25 +5,23 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium cursor-pointer transition-all duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium cursor-pointer select-none transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default:
-          "bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 text-white shadow-lg shadow-fuchsia-500/25 hover:shadow-fuchsia-500/40 hover:brightness-110",
-        destructive:
-          "bg-red-500/15 text-red-300 border border-red-500/30 hover:bg-red-500/25 hover:text-red-200",
+        default: "bg-zinc-100 text-zinc-900 hover:bg-white",
+        destructive: "bg-red-500/10 text-red-400 hover:bg-red-500/15",
         outline:
-          "border border-white/15 bg-white/5 backdrop-blur-md hover:bg-white/10 hover:border-white/25",
-        secondary:
-          "bg-white/10 text-foreground border border-white/10 backdrop-blur-md hover:bg-white/15",
-        ghost: "hover:bg-white/10 hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+          "border border-white/10 bg-transparent text-foreground hover:bg-white/[0.06]",
+        secondary: "bg-white/[0.07] text-foreground hover:bg-white/[0.11]",
+        ghost:
+          "text-muted-foreground hover:bg-white/[0.06] hover:text-foreground",
+        link: "text-foreground underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-lg px-3 text-xs",
-        lg: "h-11 rounded-xl px-8",
+        default: "h-9 px-3.5",
+        sm: "h-8 px-3 text-[13px]",
+        lg: "h-10 px-5",
         icon: "h-9 w-9",
       },
     },

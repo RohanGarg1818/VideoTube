@@ -1,14 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import {
-  Bell,
-  BellRing,
-  Film,
-  LayoutDashboard,
-  ListVideo,
-  MessageSquare,
-  Pencil,
-} from "lucide-react";
+import { Check, Film, ListVideo, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -54,8 +46,8 @@ export function ChannelPage() {
   if (loading && !channel) {
     return (
       <div>
-        <div className="skeleton aspect-[5/1] w-full rounded-3xl" />
-        <div className="skeleton mt-4 h-28 rounded-3xl" />
+        <div className="skeleton aspect-[5/1] w-full rounded-xl" />
+        <div className="skeleton mt-4 h-28 rounded-xl" />
       </div>
     );
   }
@@ -98,85 +90,73 @@ export function ChannelPage() {
   ];
 
   return (
-    <div className="animate-fade-up">
-      <div className="relative aspect-[3/1] w-full overflow-hidden rounded-3xl ring-1 ring-white/10 md:aspect-[5/1]">
-        {channel.coverImage ? (
+    <div>
+      {channel.coverImage && (
+        <div className="aspect-[6/1] w-full overflow-hidden rounded-xl bg-zinc-800">
           <img
             src={channel.coverImage}
             alt=""
             className="h-full w-full object-cover"
           />
-        ) : (
-          <div className="h-full w-full bg-gradient-to-br from-violet-600/60 via-fuchsia-600/40 to-pink-500/40" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-      </div>
+        </div>
+      )}
 
-      <div className="glass-strong relative z-10 mx-2 -mt-10 flex flex-wrap items-center gap-5 rounded-3xl p-5 md:mx-6 md:-mt-14 md:p-6">
+      <div className="mt-6 flex flex-wrap items-center gap-5">
         <UserAvatar
           src={channel.avatar}
           name={channel.fullName}
           className="h-20 w-20 text-2xl md:h-28 md:w-28"
-          ring
         />
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-2xl font-extrabold tracking-tight md:text-3xl">
+          <h1 className="truncate text-2xl font-semibold tracking-[-0.02em] md:text-[32px] md:leading-tight">
             {channel.fullName}
           </h1>
-          <p className="text-sm text-muted-foreground">
-            @{channel.username}{" "}
-            {channel.createdAt && <>· Joined {formatDate(channel.createdAt)}</>}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <p className="mt-1 text-sm text-muted-foreground">
+            <span className="font-medium text-foreground/90">
+              @{channel.username}
+            </span>
             {stats.map((s) => (
-              <span
-                key={s.label}
-                className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs"
-              >
-                <span className="font-bold">{formatCount(s.value ?? 0)}</span>{" "}
-                <span className="text-muted-foreground">{s.label}</span>
+              <span key={s.label}>
+                {" · "}
+                {formatCount(s.value ?? 0)} {s.label.toLowerCase()}
               </span>
             ))}
+          </p>
+          {channel.createdAt && (
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Joined {formatDate(channel.createdAt)}
+            </p>
+          )}
+          <div className="mt-4 flex gap-2">
+            {isMine ? (
+              <>
+                <Button variant="secondary" className="rounded-full" asChild>
+                  <Link to="/settings">Customize channel</Link>
+                </Button>
+                <Button variant="secondary" className="rounded-full" asChild>
+                  <Link to="/studio">Manage videos</Link>
+                </Button>
+              </>
+            ) : (
+              <Button
+                onClick={toggleSub}
+                disabled={busy}
+                variant={channel.isSubscribed ? "secondary" : "default"}
+                className="rounded-full px-4"
+              >
+                {channel.isSubscribed && <Check />}
+                {channel.isSubscribed ? "Subscribed" : "Subscribe"}
+              </Button>
+            )}
           </div>
         </div>
-        {isMine ? (
-          <div className="flex gap-2">
-            <Button variant="secondary" asChild>
-              <Link to="/settings">
-                <Pencil /> Customize
-              </Link>
-            </Button>
-            <Button asChild>
-              <Link to="/studio">
-                <LayoutDashboard /> Studio
-              </Link>
-            </Button>
-          </div>
-        ) : (
-          <Button
-            onClick={toggleSub}
-            disabled={busy}
-            variant={channel.isSubscribed ? "secondary" : "default"}
-            size="lg"
-            className="rounded-full"
-          >
-            {channel.isSubscribed ? <BellRing /> : <Bell />}
-            {channel.isSubscribed ? "Subscribed" : "Subscribe"}
-          </Button>
-        )}
       </div>
 
-      <Tabs defaultValue="videos" className="mt-8">
+      <Tabs defaultValue="videos" className="mt-6">
         <TabsList>
-          <TabsTrigger value="videos">
-            <Film className="mr-1.5 h-4 w-4" /> Videos
-          </TabsTrigger>
-          <TabsTrigger value="playlists">
-            <ListVideo className="mr-1.5 h-4 w-4" /> Playlists
-          </TabsTrigger>
-          <TabsTrigger value="community">
-            <MessageSquare className="mr-1.5 h-4 w-4" /> Community
-          </TabsTrigger>
+          <TabsTrigger value="videos">Videos</TabsTrigger>
+          <TabsTrigger value="playlists">Playlists</TabsTrigger>
+          <TabsTrigger value="community">Posts</TabsTrigger>
         </TabsList>
         <TabsContent value="videos" className="mt-6">
           <ChannelVideos userId={channel._id} />
@@ -262,7 +242,7 @@ function ChannelCommunity({ channelId }: { channelId: string }) {
     (page) => CommunityAPI.byChannel(channelId, { page, limit: 10 }),
     [channelId, me?._id],
   );
-  if (loading) return <div className="skeleton h-32 max-w-2xl rounded-3xl" />;
+  if (loading) return <div className="skeleton h-32 max-w-2xl rounded-xl" />;
   if (errorMessage)
     return <ErrorState message={errorMessage} onRetry={reload} />;
   if (!items.length)

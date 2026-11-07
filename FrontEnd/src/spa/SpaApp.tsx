@@ -4,7 +4,6 @@ import { Toaster } from "sonner";
 import { AppLayout } from "./layout/AppLayout";
 import { AuthLayout } from "./layout/AuthLayout";
 import { RequireAuth } from "./layout/RequireAuth";
-import { Aurora } from "./layout/Aurora";
 import { Logo } from "./components/Logo";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
@@ -32,8 +31,7 @@ const StudioPage = lazy(() =>
 function Splash() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6">
-      <Aurora />
-      <Logo className="scale-125 animate-pulse" />
+      <Logo className="opacity-80" />
     </div>
   );
 }
@@ -53,10 +51,8 @@ export function SpaApp() {
       <Toaster
         theme="dark"
         position="bottom-right"
-        richColors
         toastOptions={{
-          className:
-            "!rounded-2xl !border-white/10 !bg-[rgba(30,24,50,0.85)] !backdrop-blur-xl",
+          className: "!rounded-lg !border-white/10 !bg-[#1c1c1f] !text-[13px]",
         }}
       />
       <Bootstrap>
@@ -81,7 +77,7 @@ export function SpaApp() {
                 path="/studio"
                 element={
                   <Suspense
-                    fallback={<div className="skeleton h-96 rounded-3xl" />}
+                    fallback={<div className="skeleton h-96 rounded-xl" />}
                   >
                     <StudioPage />
                   </Suspense>

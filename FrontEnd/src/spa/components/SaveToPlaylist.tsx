@@ -83,7 +83,7 @@ export function SaveToPlaylist({ videoId }: { videoId: string }) {
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="secondary" size="sm" className="rounded-full">
+        <Button variant="secondary" className="rounded-full">
           <ListPlus /> Save
         </Button>
       </DialogTrigger>
@@ -115,7 +115,7 @@ export function SaveToPlaylist({ videoId }: { videoId: string }) {
                     className={cn(
                       "grid h-5 w-5 place-items-center rounded-md border transition-colors",
                       inIt
-                        ? "border-transparent bg-gradient-to-br from-violet-500 to-fuchsia-500"
+                        ? "border-transparent bg-zinc-100 text-zinc-900"
                         : "border-white/25",
                     )}
                   >

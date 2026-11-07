@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Pencil, Play } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { formatDuration, formatViews, getOwner, timeAgo } from "../lib/format";
 import type { Video } from "../services/endpoints";
 import { useAuthStore } from "../store/authStore";
@@ -16,33 +16,25 @@ export function VideoThumb({
   return (
     <div
       className={cn(
-        "relative aspect-video w-full overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10",
+        "relative aspect-video w-full overflow-hidden rounded-xl bg-zinc-800/60",
         className,
       )}
     >
-      {video.thumbnail ? (
+      {video.thumbnail && (
         <img
           src={video.thumbnail}
-          alt={video.title}
+          alt=""
           loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
+          className="h-full w-full object-cover"
         />
-      ) : (
-        <div className="h-full w-full bg-gradient-to-br from-violet-900/50 to-fuchsia-900/40" />
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-      <div className="absolute inset-0 grid place-items-center opacity-0 transition-all duration-300 group-hover:opacity-100">
-        <span className="grid h-12 w-12 scale-75 place-items-center rounded-full border border-white/30 bg-white/15 backdrop-blur-md transition-transform duration-300 group-hover:scale-100">
-          <Play className="h-5 w-5 translate-x-[1px] fill-white text-white" />
-        </span>
-      </div>
       {video.duration ? (
-        <span className="absolute bottom-2 right-2 rounded-lg bg-black/60 px-1.5 py-0.5 text-[11px] font-semibold text-white backdrop-blur-md">
+        <span className="absolute bottom-1.5 right-1.5 rounded bg-black/80 px-1 py-px text-[11px] font-medium tabular-nums text-white">
           {formatDuration(video.duration)}
         </span>
       ) : null}
       {video.isPublished === false && (
-        <span className="absolute left-2 top-2 rounded-lg bg-amber-500/80 px-2 py-0.5 text-[11px] font-semibold text-black">
+        <span className="absolute left-1.5 top-1.5 rounded bg-black/80 px-1.5 py-px text-[11px] font-medium text-white">
           Draft
         </span>
       )}
@@ -50,27 +42,25 @@ export function VideoThumb({
   );
 }
 
-export function VideoCard({
-  video,
-  index = 0,
-}: {
-  video: Video;
-  index?: number;
-}) {
+export function VideoCard({ video }: { video: Video; index?: number }) {
   const owner = getOwner(video);
   const user = useAuthStore((s) => s.user);
   const isOwner = Boolean(owner?._id && owner._id === user?._id);
 
   return (
-    <article
-      className="group relative flex animate-fade-up flex-col gap-3 rounded-3xl p-2 transition-colors duration-300 hover:bg-white/[0.04]"
-      style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}
-    >
-      <Link to={`/watch/${video._id}`} aria-label={video.title}>
-        <VideoThumb video={video} />
+    <article className="group flex flex-col gap-3">
+      <Link
+        to={`/watch/${video._id}`}
+        aria-label={video.title}
+        className="rounded-xl"
+      >
+        <VideoThumb
+          video={video}
+          className="transition-[border-radius] duration-200 group-hover:rounded-md"
+        />
       </Link>
 
-      <div className="flex gap-3 px-1">
+      <div className="flex gap-3">
         {owner && (
           <Link to={`/channel/${owner.username}`} className="shrink-0">
             <UserAvatar src={owner.avatar} name={owner.fullName} />
@@ -78,27 +68,28 @@ export function VideoCard({
         )}
         <div className="min-w-0 flex-1">
           <Link to={`/watch/${video._id}`}>
-            <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug text-foreground transition-colors group-hover:text-fuchsia-100">
+            <h3 className="line-clamp-2 text-[15px] font-medium leading-[1.35] text-foreground">
               {video.title}
             </h3>
           </Link>
           {owner && (
             <Link
               to={`/channel/${owner.username}`}
-              className="mt-1 block truncate text-sm text-muted-foreground transition-colors hover:text-foreground"
+              className="mt-1 block truncate text-[13px] text-muted-foreground hover:text-foreground"
             >
               {owner.fullName ?? owner.username}
             </Link>
           )}
-          <p className="mt-0.5 text-xs text-muted-foreground/80">
+          <p className="text-[13px] text-muted-foreground">
             {formatViews(video.views)} views · {timeAgo(video.createdAt)}
           </p>
         </div>
         {isOwner && (
           <Link
             to={`/video/edit/${video._id}`}
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted-foreground opacity-0 transition hover:bg-white/10 hover:text-foreground group-hover:opacity-100"
+            className="-mr-1 grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground opacity-0 transition-opacity hover:bg-white/[0.08] hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
             aria-label="Edit video"
+            title="Edit"
           >
             <Pencil className="h-4 w-4" />
           </Link>
@@ -108,7 +99,6 @@ export function VideoCard({
   );
 }
 
-/** Horizontal compact card – used in "Up next", playlists and history. */
 export function VideoRow({
   video,
   actions,
@@ -118,13 +108,13 @@ export function VideoRow({
 }) {
   const owner = getOwner(video);
   return (
-    <div className="group flex gap-3 rounded-2xl p-1.5 transition-colors hover:bg-white/[0.05]">
-      <Link to={`/watch/${video._id}`} className="w-40 shrink-0 sm:w-44">
-        <VideoThumb video={video} className="rounded-xl" />
+    <div className="group flex gap-3 rounded-lg p-1 transition-colors hover:bg-white/[0.03]">
+      <Link to={`/watch/${video._id}`} className="w-40 shrink-0 sm:w-[168px]">
+        <VideoThumb video={video} className="rounded-lg" />
       </Link>
       <div className="min-w-0 flex-1 py-0.5">
         <Link to={`/watch/${video._id}`}>
-          <h4 className="line-clamp-2 text-sm font-semibold leading-snug">
+          <h4 className="line-clamp-2 text-sm font-medium leading-snug">
             {video.title}
           </h4>
         </Link>
@@ -136,7 +126,7 @@ export function VideoRow({
             {owner.fullName}
           </Link>
         )}
-        <p className="text-xs text-muted-foreground/80">
+        <p className="text-xs text-muted-foreground">
           {formatViews(video.views)} views · {timeAgo(video.createdAt)}
         </p>
       </div>
@@ -147,13 +137,13 @@ export function VideoRow({
 
 export function VideoCardSkeleton() {
   return (
-    <div className="flex flex-col gap-3 p-2">
-      <div className="skeleton aspect-video w-full rounded-2xl" />
-      <div className="flex gap-3 px-1">
+    <div className="flex flex-col gap-3">
+      <div className="skeleton aspect-video w-full rounded-xl" />
+      <div className="flex gap-3">
         <div className="skeleton h-9 w-9 rounded-full" />
-        <div className="flex-1 space-y-2">
-          <div className="skeleton h-4 w-11/12 rounded-md" />
-          <div className="skeleton h-3 w-1/2 rounded-md" />
+        <div className="flex-1 space-y-2 pt-0.5">
+          <div className="skeleton h-3.5 w-11/12 rounded" />
+          <div className="skeleton h-3 w-1/2 rounded" />
         </div>
       </div>
     </div>
@@ -162,7 +152,7 @@ export function VideoCardSkeleton() {
 
 export function VideoGrid({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-1 gap-x-3 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 min-[1900px]:grid-cols-5">
       {children}
     </div>
   );

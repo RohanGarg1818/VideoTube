@@ -100,7 +100,7 @@ export function UploadPage() {
       form.append("videoFile", videoFile);
       form.append("thumbnail", thumbnail);
       const video = await VideoAPI.publish(form, setProgress);
-      toast.success(isPublished ? "Your video is live! 🎉" : "Draft saved");
+      toast.success(isPublished ? "Video published" : "Draft saved");
       navigate(`/watch/${video._id}`);
     } catch (err) {
       toast.error(apiErrorMessage(err));
@@ -132,8 +132,8 @@ export function UploadPage() {
                 pickVideo(e.dataTransfer.files?.[0]);
               }}
               className={cn(
-                "glass flex aspect-video cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-white/15 p-8 text-center transition-all hover:border-fuchsia-400/50",
-                drag && "scale-[1.01] border-fuchsia-400 bg-fuchsia-500/10",
+                "flex aspect-video cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-white/15 bg-white/[0.02] p-8 text-center transition-colors hover:border-white/30 hover:bg-white/[0.04]",
+                drag && "border-white/40 bg-white/[0.05]",
               )}
             >
               <input
@@ -143,21 +143,21 @@ export function UploadPage() {
                 hidden
                 onChange={(e) => pickVideo(e.target.files?.[0])}
               />
-              <div className="relative mb-5">
-                <div className="absolute inset-0 animate-pulse rounded-full bg-fuchsia-500/40 blur-2xl" />
-                <div className="relative grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-xl shadow-fuchsia-500/30">
-                  <CloudUpload className="h-9 w-9 text-white" />
-                </div>
+              <div className="mb-4 grid h-14 w-14 place-items-center rounded-full bg-white/[0.06]">
+                <CloudUpload
+                  className="h-6 w-6 text-muted-foreground"
+                  strokeWidth={1.75}
+                />
               </div>
-              <p className="text-lg font-semibold">
-                Drag & drop your video here
+              <p className="text-[15px] font-medium">
+                Drag and drop a video file
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                or click to browse your files
+                or click to browse
               </p>
             </div>
           ) : (
-            <div className="glass overflow-hidden rounded-3xl">
+            <div className="surface overflow-hidden rounded-xl">
               {videoUrl && (
                 <video
                   src={videoUrl}
@@ -169,7 +169,7 @@ export function UploadPage() {
                 />
               )}
               <div className="flex items-center gap-3 p-4">
-                <FileVideo className="h-5 w-5 shrink-0 text-fuchsia-300" />
+                <FileVideo className="h-5 w-5 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">
                     {videoFile.name}
@@ -194,7 +194,7 @@ export function UploadPage() {
             </div>
           )}
 
-          <div className="glass space-y-5 rounded-3xl p-6">
+          <div className="surface space-y-5 rounded-xl p-6">
             <div className="space-y-2">
               <div className="flex justify-between">
                 <Label htmlFor="title">Title *</Label>
@@ -232,7 +232,7 @@ export function UploadPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="glass space-y-3 rounded-3xl p-5">
+          <div className="surface space-y-3 rounded-xl p-5">
             <Label>Thumbnail *</Label>
             <ImageDrop
               file={thumbnail}
@@ -243,13 +243,13 @@ export function UploadPage() {
             />
           </div>
 
-          <div className="glass rounded-3xl p-5">
+          <div className="surface rounded-xl p-5">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 {isPublished ? (
-                  <Globe className="h-5 w-5 text-emerald-300" />
+                  <Globe className="h-5 w-5 text-emerald-400" />
                 ) : (
-                  <Lock className="h-5 w-5 text-amber-300" />
+                  <Lock className="h-5 w-5 text-amber-400" />
                 )}
                 <div>
                   <p className="text-sm font-semibold">
@@ -268,7 +268,7 @@ export function UploadPage() {
             </div>
           </div>
 
-          <div className="glass space-y-4 rounded-3xl p-5">
+          <div className="surface space-y-4 rounded-xl p-5">
             {uploading && (
               <div className="space-y-2">
                 <div className="flex justify-between text-xs">
@@ -276,7 +276,7 @@ export function UploadPage() {
                     {progress! < 100 ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
                     )}
                     {progress! < 100 ? "Uploading…" : "Processing on server…"}
                   </span>

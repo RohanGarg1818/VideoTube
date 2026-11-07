@@ -58,7 +58,7 @@ export function HistoryPage() {
       {loading ? (
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="skeleton h-28 rounded-2xl" />
+            <div key={i} className="skeleton h-28 rounded-xl" />
           ))}
         </div>
       ) : errorMessage ? (
@@ -70,7 +70,7 @@ export function HistoryPage() {
           description="Videos you watch will show up here."
         />
       ) : (
-        <div className="glass space-y-1 rounded-3xl p-3">
+        <div className="surface space-y-1 rounded-xl p-3">
           {data.map((v) => (
             <VideoRow
               key={v._id}

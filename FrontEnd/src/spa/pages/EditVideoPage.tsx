@@ -54,7 +54,7 @@ export function EditVideoPage() {
   }, [video]);
 
   if (loading)
-    return <div className="skeleton mx-auto h-96 max-w-5xl rounded-3xl" />;
+    return <div className="skeleton mx-auto h-96 max-w-5xl rounded-xl" />;
   if (errorMessage)
     return <ErrorState message={errorMessage} onRetry={refetch} />;
   if (!video) return null;
@@ -121,7 +121,7 @@ export function EditVideoPage() {
       />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-        <div className="glass space-y-5 rounded-3xl p-6">
+        <div className="surface space-y-5 rounded-xl p-6">
           <div className="space-y-2">
             <div className="flex justify-between">
               <Label htmlFor="title">Title</Label>
@@ -178,7 +178,7 @@ export function EditVideoPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="glass space-y-3 rounded-3xl p-5">
+          <div className="surface space-y-3 rounded-xl p-5">
             <Label>Thumbnail</Label>
             <ImageDrop
               file={thumbnail}
@@ -188,13 +188,13 @@ export function EditVideoPage() {
               shape="video"
             />
           </div>
-          <div className="glass rounded-3xl p-5">
+          <div className="surface rounded-xl p-5">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 {video.isPublished ? (
-                  <Globe className="h-5 w-5 text-emerald-300" />
+                  <Globe className="h-5 w-5 text-emerald-400" />
                 ) : (
-                  <Lock className="h-5 w-5 text-amber-300" />
+                  <Lock className="h-5 w-5 text-amber-400" />
                 )}
                 <div>
                   <p className="text-sm font-semibold">
@@ -214,12 +214,12 @@ export function EditVideoPage() {
             </div>
             <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/10 pt-4 text-center">
               <div className="rounded-xl bg-white/5 p-2">
-                <Eye className="mx-auto h-4 w-4 text-fuchsia-300" />
+                <Eye className="mx-auto h-4 w-4 text-muted-foreground" />
                 <p className="mt-1 font-bold">{formatCount(video.views)}</p>
                 <p className="text-[11px] text-muted-foreground">views</p>
               </div>
               <div className="rounded-xl bg-white/5 p-2">
-                <Heart className="mx-auto h-4 w-4 text-pink-300" />
+                <Heart className="mx-auto h-4 w-4 text-foreground" />
                 <p className="mt-1 font-bold">{formatCount(video.likes)}</p>
                 <p className="text-[11px] text-muted-foreground">likes</p>
               </div>

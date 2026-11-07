@@ -62,7 +62,7 @@ export function SubscriptionsPage() {
               ? Array.from({ length: 6 }).map((_, i) => (
                   <div
                     key={i}
-                    className="skeleton h-36 w-32 shrink-0 rounded-3xl"
+                    className="skeleton h-36 w-32 shrink-0 rounded-xl"
                   />
                 ))
               : list.map(({ channel }) =>
@@ -70,7 +70,7 @@ export function SubscriptionsPage() {
                     <Link
                       key={channel._id}
                       to={`/channel/${channel.username}`}
-                      className="glass glass-hover flex w-36 shrink-0 animate-fade-up flex-col items-center rounded-3xl p-4 text-center"
+                      className="surface surface-hover flex w-36 shrink-0 flex-col items-center rounded-xl p-4 text-center"
                     >
                       <UserAvatar
                         src={channel.avatar}
@@ -89,9 +89,8 @@ export function SubscriptionsPage() {
                 )}
           </div>
 
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
-            <Film className="h-5 w-5 text-fuchsia-300" /> Latest from your
-            channels
+          <h2 className="mb-4 flex items-center gap-2 text-base font-semibold">
+            Latest from your channels
           </h2>
           {feed.loading ? (
             <VideoGridSkeleton count={4} />

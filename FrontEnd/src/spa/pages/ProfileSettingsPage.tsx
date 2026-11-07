@@ -72,7 +72,7 @@ export function ProfileSettingsPage() {
         }
       />
 
-      <section className="glass mb-6 rounded-3xl p-6">
+      <section className="surface mb-6 rounded-xl p-6">
         <h2 className="mb-4 font-semibold">Branding</h2>
         <div className="relative mb-14">
           <ImageDrop
@@ -104,7 +104,7 @@ export function ProfileSettingsPage() {
         </p>
       </section>
 
-      <form onSubmit={saveAccount} className="glass space-y-5 rounded-3xl p-6">
+      <form onSubmit={saveAccount} className="surface space-y-5 rounded-xl p-6">
         <h2 className="font-semibold">Account</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">

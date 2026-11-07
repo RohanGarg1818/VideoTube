@@ -38,25 +38,23 @@ function StatCard({
   label,
   value,
   hint,
-  tint,
 }: {
   icon: typeof Eye;
   label: string;
   value: number;
   hint?: string;
-  tint: string;
+  tint?: string;
 }) {
   return (
-    <div className="glass glass-hover relative animate-fade-up overflow-hidden rounded-3xl p-5">
-      <div
-        className={`absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-40 blur-2xl ${tint}`}
-      />
-      <Icon className="h-5 w-5 text-muted-foreground" />
-      <p className="mt-3 text-3xl font-extrabold tracking-tight">
+    <div className="surface rounded-xl p-4">
+      <div className="flex items-center justify-between text-[13px] text-muted-foreground">
+        {label}
+        <Icon className="h-4 w-4" strokeWidth={1.75} />
+      </div>
+      <p className="mt-2 text-2xl font-semibold tabular-nums tracking-tight">
         {formatCount(value)}
       </p>
-      <p className="text-sm text-muted-foreground">{label}</p>
-      {hint && <p className="mt-1 text-xs text-emerald-300">{hint}</p>}
+      <p className="mt-0.5 h-4 text-xs text-muted-foreground">{hint}</p>
     </div>
   );
 }
@@ -127,7 +125,7 @@ export function StudioPage() {
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {stats.loading || !s ? (
               Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="skeleton h-36 rounded-3xl" />
+                <div key={i} className="skeleton h-36 rounded-xl" />
               ))
             ) : (
               <>
@@ -142,11 +140,7 @@ export function StudioPage() {
                   label="Subscribers"
                   value={s.subscribersCount}
                   tint="bg-fuchsia-500"
-                  hint={
-                    s.newSubscribersLast30Days
-                      ? `+${s.newSubscribersLast30Days} in last 30 days`
-                      : undefined
-                  }
+                  hint={`+${s.newSubscribersLast30Days} in the last 30 days`}
                 />
                 <StatCard
                   icon={Heart}
@@ -166,7 +160,7 @@ export function StudioPage() {
 
           {s && (
             <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_380px]">
-              <div className="glass rounded-3xl p-5">
+              <div className="surface rounded-xl p-5">
                 <div className="mb-4 flex items-baseline justify-between">
                   <h2 className="font-semibold">Views by upload month</h2>
                   <span className="text-xs text-muted-foreground">
@@ -191,18 +185,18 @@ export function StudioPage() {
                           >
                             <stop
                               offset="0%"
-                              stopColor="#d946ef"
-                              stopOpacity={0.5}
+                              stopColor="#e4e4e7"
+                              stopOpacity={0.14}
                             />
                             <stop
                               offset="100%"
-                              stopColor="#8b5cf6"
+                              stopColor="#e4e4e7"
                               stopOpacity={0}
                             />
                           </linearGradient>
                         </defs>
                         <CartesianGrid
-                          stroke="rgba(255,255,255,0.06)"
+                          stroke="rgba(255,255,255,0.05)"
                           vertical={false}
                         />
                         <XAxis
@@ -221,17 +215,17 @@ export function StudioPage() {
                         />
                         <Tooltip
                           contentStyle={{
-                            background: "rgba(30,24,50,0.9)",
+                            background: "#1c1c1f",
                             border: "1px solid rgba(255,255,255,0.12)",
-                            borderRadius: 12,
-                            backdropFilter: "blur(12px)",
+                            borderRadius: 8,
+                            fontSize: 12,
                           }}
                         />
                         <Area
                           type="monotone"
                           dataKey="views"
-                          stroke="#e879f9"
-                          strokeWidth={2.5}
+                          stroke="#d4d4d8"
+                          strokeWidth={1.75}
                           fill="url(#viewsFill)"
                         />
                       </AreaChart>
@@ -244,7 +238,7 @@ export function StudioPage() {
                 )}
               </div>
 
-              <div className="glass rounded-3xl p-5">
+              <div className="surface rounded-xl p-5">
                 <h2 className="mb-3 font-semibold">Top videos</h2>
                 {s.topVideos.length ? (
                   <ol className="space-y-2">
@@ -286,14 +280,14 @@ export function StudioPage() {
         </>
       )}
 
-      <h2 className="mb-4 mt-10 flex items-center gap-2 text-lg font-bold">
-        <Film className="h-5 w-5 text-fuchsia-300" /> Your content{" "}
+      <h2 className="mb-4 mt-10 flex items-center gap-2 text-base font-semibold">
+        Your content{" "}
         <span className="text-sm font-normal text-muted-foreground">
           ({videos.total})
         </span>
       </h2>
       {videos.loading ? (
-        <div className="skeleton h-64 rounded-3xl" />
+        <div className="skeleton h-64 rounded-xl" />
       ) : videos.errorMessage ? (
         <ErrorState message={videos.errorMessage} onRetry={videos.reload} />
       ) : !videos.items.length ? (
@@ -310,7 +304,7 @@ export function StudioPage() {
           }
         />
       ) : (
-        <div className="glass overflow-x-auto rounded-3xl">
+        <div className="surface overflow-x-auto rounded-xl">
           <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wider text-muted-foreground">
@@ -351,7 +345,7 @@ export function StudioPage() {
                       />
                       <span
                         className={
-                          v.isPublished ? "text-emerald-300" : "text-amber-300"
+                          v.isPublished ? "text-emerald-400" : "text-amber-400"
                         }
                       >
                         {v.isPublished ? "Public" : "Draft"}
@@ -390,7 +384,7 @@ export function StudioPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="text-red-300 hover:text-red-200"
+                            className="text-red-400 hover:text-red-400"
                             aria-label="Delete"
                           >
                             <Trash2 />
